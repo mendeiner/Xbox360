@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Xbox 360 Games</title>
+<script src="covers_map.js"></script>
+<script src="games.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f0f0f;--card:#1a1a1a;--card-hover:#252525;
+  --xbox:#107C10;--xbox-light:#15a015;
+  --text:#fff;--muted:#aaa;--border:#2a2a2a;
+  --owned:#107C10;--playing:#1565C0;--wishlist:#6A1B9A;
+  --dl:#e65100;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* HEADER */
+#header{position:sticky;top:0;z-index:100;background:linear-gradient(180deg,#000 70%,transparent);padding:12px 16px 16px}
+#header-top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+#logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;color:var(--xbox)}
+#logo svg{width:32px;height:32px}
+#search-wrap{flex:1;position:relative}
+#search{width:100%;background:#1e1e1e;border:1px solid var(--border);border-radius:24px;padding:10px 40px 10px 16px;color:var(--text);font-size:14px;outline:none;transition:.2s}
+#search:focus{border-color:var(--xbox);background:#222}
+#search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);cursor:pointer;display:none;font-size:18px;line-height:1}
+
+/* FILTROS */
+#filters-wrap{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+#filters-wrap::-webkit-scrollbar{display:none}
+.filter-chip{flex-shrink:0;background:#1e1e1e;border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;transition:.2s;color:var(--muted);white-space:nowrap}
+.filter-chip.active{background:var(--xbox);border-color:var(--xbox);color:#fff}
+
+/* COLEÇÃO */
+#collection-section{padding:0 16px;margin-bottom:8px;display:none}
+#collection-section.visible{display:block}
+.section-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-left:4px}
+#collection-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+#collection-scroll::-webkit-scrollbar{display:none}
+.mini-card{flex-shrink:0;width:80px;cursor:pointer}
+.mini-card-img{width:80px;height:80px;border-radius:6px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);text-align:center;padding:4px;line-height:1.3;border:2px solid transparent;overflow:hidden;position:relative}
+.mini-card-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.mini-card-img.owned{border-color:var(--owned)}
+.mini-card-img.playing{border-color:var(--playing)}
+.mini-card-img.wishlist{border-color:var(--wishlist)}
+.mini-card-title{font-size:9px;color:var(--muted);margin-top:4px;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+
+/* ROWS */
+#content{padding:0 0 80px}
+.row{margin-bottom:24px}
+.row-header{display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin-bottom:8px}
+.row-title{font-size:15px;font-weight:700}
+.row-count{font-size:11px;color:var(--muted)}
+.row-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 8px;scrollbar-width:none}
+.row-scroll::-webkit-scrollbar{display:none}
+
+/* GRID */
+#grid-view{display:none;padding:8px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+#grid-view.hidden{display:none}
+
+/* CARDS */
+.card{flex-shrink:0;width:120px;cursor:pointer;border-radius:8px;overflow:hidden;background:var(--card);transition:.2s;position:relative}
+.card:active{transform:scale(.96)}
+.card-img{width:120px;height:120px;background:#222;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);text-align:center;padding:6px;line-height:1.4;position:relative}
+.card-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+.card-badge{position:absolute;top:4px;left:4px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;z-index:2}
+.badge-owned{background:var(--owned)}
+.badge-playing{background:var(--playing)}
+.badge-wishlist{background:var(--wishlist)}
+
+/* DOWNLOAD BADGE on card */
+.card-dl-btn{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:var(--dl);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;text-decoration:none;z-index:2}
+.card-dl-btn:active{opacity:.7}
+
+.card-info{padding:6px 8px 8px}
+.card-title{font-size:11px;font-weight:600;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:4px;min-height:28px}
+.card-meta{display:flex;align-items:center;gap:4px}
+.card-year{font-size:10px;color:var(--muted)}
+.type-badge{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600}
+.type-retail{background:#1a3a1a;color:#4caf50}
+.type-arcade{background:#1a2a3a;color:#64b5f6}
+.type-kinect{background:#3a1a2a;color:#ce93d8}
+
+/* GRID CARD */
+.grid-card{cursor:pointer;border-radius:8px;overflow:hidden;background:var(--card);transition:.2s;position:relative}
+.grid-card:active{transform:scale(.96)}
+.grid-card-img{width:100%;aspect-ratio:1;background:#222;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);text-align:center;padding:4px;line-height:1.3;position:relative}
+.grid-card-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+.grid-card-info{padding:4px 6px 6px}
+.grid-card-title{font-size:10px;font-weight:600;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:2px;min-height:24px}
+.grid-card-meta{display:flex;align-items:center;gap:3px}
+.grid-card-year{font-size:9px;color:var(--muted)}
+
+/* MODAL */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:flex-end;backdrop-filter:blur(4px)}
+#modal-overlay.open{display:flex}
+#modal{background:#1a1a1a;border-radius:20px 20px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding:20px 20px 40px;transform:translateY(100%);transition:transform .3s ease}
+#modal-overlay.open #modal{transform:translateY(0)}
+#modal-handle{width:40px;height:4px;background:#333;border-radius:2px;margin:0 auto 16px}
+#modal-header{display:flex;gap:14px;margin-bottom:16px}
+#modal-cover{width:90px;height:90px;border-radius:10px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);text-align:center;padding:6px;overflow:hidden}
+#modal-cover img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+#modal-info{flex:1;min-width:0}
+#modal-title{font-size:17px;font-weight:700;line-height:1.3;margin-bottom:6px}
+#modal-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.tag{font-size:11px;padding:3px 8px;border-radius:12px;background:#252525;color:var(--muted)}
+.tag.genre{background:#1a2a1a;color:#81c784}
+#modal-year-type{font-size:12px;color:var(--muted)}
+
+/* DOWNLOAD SECTION IN MODAL */
+#modal-dl-section{margin-bottom:14px;padding:12px;background:#111;border-radius:12px;border:1px solid var(--border)}
+#modal-dl-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;font-weight:600}
+.dl-row{display:flex;align-items:center;gap:10px}
+.dl-part-badge{background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);font-weight:600;flex-shrink:0}
+.dl-filename{font-size:10px;color:#888;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dl-btns{display:flex;gap:6px;margin-top:10px}
+.dl-btn{flex:1;padding:10px 6px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px;transition:.15s}
+.dl-btn:active{opacity:.8}
+.dl-btn-direct{background:var(--dl);color:#fff}
+.dl-btn-page{background:#222;color:var(--muted);border:1px solid var(--border)}
+#modal-no-dl{font-size:12px;color:#555;text-align:center;padding:8px 0}
+
+#collection-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:0}
+.col-btn{padding:10px 4px;border-radius:10px;border:2px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:.2s;line-height:1.3}
+.col-btn.active-owned{background:var(--owned);border-color:var(--owned);color:#fff}
+.col-btn.active-playing{background:var(--playing);border-color:var(--playing);color:#fff}
+.col-btn.active-wishlist{background:var(--wishlist);border-color:var(--wishlist);color:#fff}
+.col-btn:active{opacity:.8}
+#modal-close-row{text-align:center;margin-top:14px}
+#modal-close{color:var(--muted);font-size:13px;padding:8px 24px;cursor:pointer}
+
+#empty{display:none;text-align:center;padding:60px 20px;color:var(--muted)}
+#empty-icon{font-size:48px;margin-bottom:12px}
+#stats-bar{background:#111;padding:10px 16px;display:flex;gap:12px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);position:fixed;bottom:0;left:0;right:0;z-index:50;overflow-x:auto;scrollbar-width:none}
+#stats-bar::-webkit-scrollbar{display:none}
+.stat{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.stat-dot{width:7px;height:7px;border-radius:50%}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-top">
+    <div id="logo">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="15" fill="#107C10"/>
+        <path d="M8 10L13 16L8 22M16 8L22 16L16 24M24 10L19 16L24 22" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Xbox 360
+    </div>
+    <div id="search-wrap">
+      <input id="search" type="search" placeholder="Buscar jogos..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <span id="search-clear">×</span>
+    </div>
+  </div>
+  <div id="filters-wrap">
+    <div class="filter-chip active" data-filter="all">Todos</div>
+    <div class="filter-chip" data-filter="dl">⬇️ Com Download</div>
+    <div class="filter-chip" data-filter="retail">Retail</div>
+    <div class="filter-chip" data-filter="arcade">XBLA</div>
+    <div class="filter-chip" data-filter="kinect">Kinect</div>
+    <div class="filter-chip" data-filter="Ação">Ação</div>
+    <div class="filter-chip" data-filter="RPG">RPG</div>
+    <div class="filter-chip" data-filter="FPS">FPS</div>
+    <div class="filter-chip" data-filter="Esportes">Esportes</div>
+    <div class="filter-chip" data-filter="Corrida">Corrida</div>
+    <div class="filter-chip" data-filter="Luta">Luta</div>
+    <div class="filter-chip" data-filter="Música">Música</div>
+    <div class="filter-chip" data-filter="Terror">Terror</div>
+    <div class="filter-chip" data-filter="Estratégia">Estratégia</div>
+    <div class="filter-chip" data-filter="Puzzle">Puzzle</div>
+    <div class="filter-chip" data-filter="Família">Família</div>
+    <div class="filter-chip" data-filter="Futebol">Futebol</div>
+    <div class="filter-chip" data-filter="Basquete">Basquete</div>
+  </div>
+</div>
+
+<div id="collection-section">
+  <div class="section-title">Minha Coleção</div>
+  <div id="collection-scroll"></div>
+</div>
+
+<div id="content"></div>
+<div id="grid-view" class="hidden"></div>
+<div id="empty"><div id="empty-icon">🎮</div><div>Nenhum jogo encontrado</div></div>
+
+<div id="modal-overlay">
+  <div id="modal">
+    <div id="modal-handle"></div>
+    <div id="modal-header">
+      <div id="modal-cover"></div>
+      <div id="modal-info">
+        <div id="modal-title"></div>
+        <div id="modal-tags"></div>
+        <div id="modal-year-type"></div>
+      </div>
+    </div>
+
+    <div id="modal-dl-section">
+      <div id="modal-dl-title">⬇️ Download XEX</div>
+      <div id="modal-dl-content"></div>
+    </div>
+
+    <div id="collection-btns">
+      <button class="col-btn" id="btn-owned">✅ Tenho</button>
+      <button class="col-btn" id="btn-playing">🎮 Jogando</button>
+      <button class="col-btn" id="btn-wishlist">⭐ Quero</button>
+    </div>
+    <div id="modal-close-row">
+      <span id="modal-close">Fechar</span>
+    </div>
+  </div>
+</div>
+
+<div id="stats-bar">
+  <div class="stat"><div class="stat-dot" style="background:var(--owned)"></div><span id="stat-owned">0 tenho</span></div>
+  <div class="stat"><div class="stat-dot" style="background:var(--playing)"></div><span id="stat-playing">0 jogando</span></div>
+  <div class="stat"><div class="stat-dot" style="background:var(--wishlist)"></div><span id="stat-wishlist">0 quero</span></div>
+  <div class="stat"><div class="stat-dot" style="background:var(--dl)"></div><span id="stat-dl">0 download</span></div>
+  <div class="stat" style="margin-left:auto"><span id="stat-total">0 jogos</span></div>
+</div>
+
+<script>
+const COL = JSON.parse(localStorage.getItem('xbox360_col') || '{}');
+let currentGame = null, activeFilter = 'all', searchQuery = '';
+
+function saveCol(){ localStorage.setItem('xbox360_col', JSON.stringify(COL)); }
+
+const PART_NAMES = {
+  pt1:'Part 1',pt2:'Part 2',pt3:'Part 3',
+  pt4:'Part 4',pt5:'Part 5',pt6:'Part 6'
+};
+const PART_IDS = {
+  pt1:'mx360gcxpt1-x360-ztm',pt2:'mx360gcpt2-x360-ztm',pt3:'mx360gcpt3-x360-ztm',
+  pt4:'mx360gcpt4-x360-ztm',pt5:'mx360gcpt5-x360-ztm',pt6:'mx360gcpt6-x360-ztm'
+};
+
+function typeLabel(t){ return {retail:'Retail',arcade:'XBLA',kinect:'Kinect'}[t]||t; }
+function typeClass(t){ return 'type-'+t; }
+
+function matchesFilter(g){
+  if(activeFilter === 'all') return true;
+  if(activeFilter === 'dl') return !!g.dl;
+  if(['retail','arcade','kinect'].includes(activeFilter)) return g.type === activeFilter;
+  return g.genre.includes(activeFilter);
+}
+function matchesSearch(g){
+  if(!searchQuery) return true;
+  return g.title.toLowerCase().includes(searchQuery);
+}
+function filteredGames(){ return XBOX360_GAMES.filter(g => matchesFilter(g) && matchesSearch(g)); }
+
+function coverImg(gameId, style){
+  const id = COVERS[gameId];
+  if(!id) return '';
+  return `<img src="covers/${id}.jpg" alt="" loading="lazy" onerror="this.style.display='none'" style="${style||''}">`;
+}
+
+// ==================== DOWNLOAD UI ====================
+function buildDlSection(game){
+  const dl = game.dl;
+  const container = document.getElementById('modal-dl-content');
+  if(!dl){
+    container.innerHTML = '<div id="modal-no-dl">Arquivo não mapeado nas 6 partes</div>';
+    return;
+  }
+  const partName = PART_NAMES[dl.part] || dl.part;
+  const partId = PART_IDS[dl.part] || dl.part;
+  const fileName = dl.file + '.rar';
+  const directUrl = `https://archive.org/download/${partId}/${encodeURIComponent(fileName)}`;
+  const pageUrl = `https://archive.org/details/${partId}`;
+
+  container.innerHTML = `
+    <div class="dl-row">
+      <span class="dl-part-badge">${partName}</span>
+      <span class="dl-filename">${fileName}</span>
+    </div>
+    <div class="dl-btns">
+      <a href="${directUrl}" class="dl-btn dl-btn-direct" target="_blank">⬇️ Baixar .rar</a>
+      <a href="${pageUrl}" class="dl-btn dl-btn-page" target="_blank">🌐 Archive.org</a>
+    </div>`;
+}
+
+// ==================== CARD ====================
+function buildCard(game){
+  const col = COL[game.id];
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  let badgeHtml = '';
+  if(col==='owned') badgeHtml = '<div class="card-badge badge-owned">✓</div>';
+  else if(col==='playing') badgeHtml = '<div class="card-badge badge-playing">▶</div>';
+  else if(col==='wishlist') badgeHtml = '<div class="card-badge badge-wishlist">★</div>';
+
+  let dlHtml = '';
+  if(game.dl){
+    const partId = PART_IDS[game.dl.part];
+    const fname = encodeURIComponent(game.dl.file + '.rar');
+    dlHtml = `<a href="https://archive.org/download/${partId}/${fname}" class="card-dl-btn" target="_blank" onclick="event.stopPropagation()">⬇</a>`;
+  }
+
+  card.innerHTML = `
+    <div class="card-img">
+      ${coverImg(game.id)}
+      ${game.title}<br><span style="font-size:9px;opacity:.5">${game.year}</span>
+      ${badgeHtml}${dlHtml}
+    </div>
+    <div class="card-info">
+      <div class="card-title">${game.title}</div>
+      <div class="card-meta">
+        <span class="card-year">${game.year}</span>
+        <span class="type-badge ${typeClass(game.type)}">${typeLabel(game.type)}</span>
+        ${game.dl ? '<span style="font-size:9px;color:var(--dl)">⬇</span>' : ''}
+      </div>
+    </div>`;
+  card.addEventListener('click', () => openModal(game));
+  return card;
+}
+
+function buildGridCard(game){
+  const col = COL[game.id];
+  const card = document.createElement('div');
+  card.className = 'grid-card';
+
+  let badgeHtml = '';
+  if(col==='owned') badgeHtml = '<div class="card-badge badge-owned" style="top:3px;left:3px;width:16px;height:16px;font-size:7px">✓</div>';
+  else if(col==='playing') badgeHtml = '<div class="card-badge badge-playing" style="top:3px;left:3px;width:16px;height:16px;font-size:7px">▶</div>';
+  else if(col==='wishlist') badgeHtml = '<div class="card-badge badge-wishlist" style="top:3px;left:3px;width:16px;height:16px;font-size:7px">★</div>';
+
+  let dlHtml = '';
+  if(game.dl){
+    const partId = PART_IDS[game.dl.part];
+    const fname = encodeURIComponent(game.dl.file + '.rar');
+    dlHtml = `<a href="https://archive.org/download/${partId}/${fname}" class="card-dl-btn" style="top:3px;right:3px;width:18px;height:18px;font-size:9px" target="_blank" onclick="event.stopPropagation()">⬇</a>`;
+  }
+
+  card.innerHTML = `
+    <div class="grid-card-img">
+      ${coverImg(game.id)}
+      ${game.title}<br><span style="font-size:8px;opacity:.5">${game.year}</span>
+      ${badgeHtml}${dlHtml}
+    </div>
+    <div class="grid-card-info">
+      <div class="grid-card-title">${game.title}</div>
+      <div class="grid-card-meta">
+        <span class="grid-card-year">${game.year}</span>
+        <span class="type-badge ${typeClass(game.type)}" style="font-size:8px;padding:1px 4px">${typeLabel(game.type)}</span>
+        ${game.dl ? '<span style="font-size:9px;color:var(--dl)">⬇</span>' : ''}
+      </div>
+    </div>`;
+  card.addEventListener('click', () => openModal(game));
+  return card;
+}
+
+// ==================== ROWS ====================
+const ROWS = [
+  { id:'destaque', title:'⭐ Em Destaque', filter: g => [
+    'Halo 3','Gears of War','Mass Effect 2','BioShock','The Elder Scrolls V: Skyrim',
+    'Red Dead Redemption','Grand Theft Auto V','Batman: Arkham City','Dark Souls',
+    'Portal 2','Borderlands 2','The Witcher 2','Dishonored',
+    'Forza Motorsport 4','Left 4 Dead 2','Bayonetta','Trials Evolution'
+  ].some(t => g.title.includes(t.split(':')[0].trim())) },
+  { id:'dl', title:'⬇️ Com Download', filter: g => !!g.dl },
+  { id:'xbla', title:'🕹️ Xbox Live Arcade', filter: g => g.type === 'arcade' },
+  { id:'kinect', title:'🖐️ Kinect', filter: g => g.type === 'kinect' },
+  { id:'fps', title:'🔫 FPS', filter: g => g.genre.includes('FPS') },
+  { id:'acao', title:'⚔️ Ação & Aventura', filter: g => g.genre.includes('Ação') && !g.genre.includes('FPS') },
+  { id:'rpg', title:'🗡️ RPG', filter: g => g.genre.includes('RPG') },
+  { id:'terror', title:'👻 Terror', filter: g => g.genre.includes('Terror') },
+  { id:'corrida', title:'🏎️ Corrida', filter: g => g.genre.includes('Corrida') },
+  { id:'esportes', title:'⚽ Esportes', filter: g => g.genre.includes('Esportes') },
+  { id:'luta', title:'🥊 Luta', filter: g => g.genre.includes('Luta') && !g.genre.includes('Esportes') },
+  { id:'musica', title:'🎸 Música & Ritmo', filter: g => g.genre.includes('Música') },
+  { id:'estrategia', title:'♟️ Estratégia', filter: g => g.genre.includes('Estratégia') },
+  { id:'puzzle', title:'🧩 Puzzle', filter: g => g.genre.includes('Puzzle') },
+  { id:'familia', title:'👨‍👩‍👧 Família', filter: g => g.genre.includes('Família') },
+  { id:'ano05', title:'📅 2005-2007', filter: g => g.year >= 2005 && g.year <= 2007 },
+  { id:'ano08', title:'📅 2008-2010', filter: g => g.year >= 2008 && g.year <= 2010 },
+  { id:'ano11', title:'📅 2011-2013', filter: g => g.year >= 2011 && g.year <= 2013 },
+  { id:'ano14', title:'📅 2014+', filter: g => g.year >= 2014 },
+];
+
+function renderRows(){
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+  const gridView = document.getElementById('grid-view');
+  gridView.classList.add('hidden');
+  document.getElementById('empty').style.display = 'none';
+  content.style.display = 'block';
+
+  let hasAny = false;
+  ROWS.forEach(row => {
+    const games = XBOX360_GAMES.filter(g => row.filter(g) && matchesFilter(g));
+    if(!games.length) return;
+    hasAny = true;
+    const rowEl = document.createElement('div');
+    rowEl.className = 'row';
+    rowEl.innerHTML = `<div class="row-header"><span class="row-title">${row.title}</span><span class="row-count">${games.length}</span></div>`;
+    const scroll = document.createElement('div');
+    scroll.className = 'row-scroll';
+    games.slice(0,40).forEach(g => scroll.appendChild(buildCard(g)));
+    rowEl.appendChild(scroll);
+    content.appendChild(rowEl);
+  });
+  if(!hasAny){
+    content.style.display='none';
+    document.getElementById('empty').style.display='block';
+  }
+  updateStats();
+}
+
+function renderGrid(){
+  const all = filteredGames();
+  const content = document.getElementById('content');
+  content.style.display = 'none';
+  const gridView = document.getElementById('grid-view');
+  gridView.innerHTML = '';
+  gridView.classList.remove('hidden');
+  document.getElementById('empty').style.display = 'none';
+  if(!all.length){
+    gridView.classList.add('hidden');
+    document.getElementById('empty').style.display='block';
+    return;
+  }
+  all.forEach(g => gridView.appendChild(buildGridCard(g)));
+  updateStats(all.length);
+}
+
+function render(){
+  if(searchQuery) renderGrid();
+  else if(activeFilter === 'all') renderRows();
+  else renderGrid();
+  renderCollection();
+}
+
+// ==================== COLEÇÃO ====================
+function renderCollection(){
+  const colIds = Object.keys(COL);
+  const section = document.getElementById('collection-section');
+  const scroll = document.getElementById('collection-scroll');
+  if(!colIds.length){ section.classList.remove('visible'); return; }
+  section.classList.add('visible');
+  scroll.innerHTML = '';
+  colIds.forEach(id => {
+    const game = XBOX360_GAMES.find(g => g.id == id);
+    if(!game) return;
+    const colType = COL[id];
+    const mc = document.createElement('div');
+    mc.className = 'mini-card';
+    const img = document.createElement('div');
+    img.className = `mini-card-img ${colType}`;
+    const covId = COVERS[game.id];
+    if(covId){
+      const ci = document.createElement('img');
+      ci.src = `covers/${covId}.jpg`;
+      ci.alt = '';
+      ci.onerror = function(){ this.style.display='none'; };
+      img.appendChild(ci);
+    }
+    const txt = document.createElement('span');
+    txt.textContent = game.title;
+    txt.style.cssText = 'position:relative;z-index:1;font-size:9px';
+    img.appendChild(txt);
+    const title = document.createElement('div');
+    title.className = 'mini-card-title';
+    title.textContent = game.title;
+    mc.appendChild(img); mc.appendChild(title);
+    mc.addEventListener('click', () => openModal(game));
+    scroll.appendChild(mc);
+  });
+}
+
+// ==================== STATS ====================
+function updateStats(total){
+  const owned = Object.values(COL).filter(v=>v==='owned').length;
+  const playing = Object.values(COL).filter(v=>v==='playing').length;
+  const wishlist = Object.values(COL).filter(v=>v==='wishlist').length;
+  const dlCount = XBOX360_GAMES.filter(g=>g.dl).length;
+  document.getElementById('stat-owned').textContent = owned+' tenho';
+  document.getElementById('stat-playing').textContent = playing+' jogando';
+  document.getElementById('stat-wishlist').textContent = wishlist+' quero';
+  document.getElementById('stat-dl').textContent = dlCount+' download';
+  document.getElementById('stat-total').textContent = (total||XBOX360_GAMES.length)+' jogos';
+}
+
+// ==================== MODAL ====================
+function openModal(game){
+  currentGame = game;
+  const col = COL[game.id];
+  const covId = COVERS[game.id];
+
+  const cover = document.getElementById('modal-cover');
+  cover.innerHTML = '';
+  if(covId){
+    const ci = document.createElement('img');
+    ci.src = `covers/${covId}.jpg`;
+    ci.alt = '';
+    ci.onerror = function(){ this.style.display='none'; cover.textContent=game.title; };
+    cover.appendChild(ci);
+  } else {
+    cover.textContent = game.title;
+    cover.style.cssText = 'width:90px;height:90px;border-radius:10px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#888;text-align:center;padding:6px;line-height:1.4;overflow:hidden';
+  }
+
+  document.getElementById('modal-title').textContent = game.title;
+
+  const tags = document.getElementById('modal-tags');
+  tags.innerHTML = '';
+  game.genre.forEach(g => {
+    const t = document.createElement('span');
+    t.className = 'tag genre'; t.textContent = g; tags.appendChild(t);
+  });
+
+  document.getElementById('modal-year-type').textContent = `${game.year} · ${typeLabel(game.type)}`;
+
+  buildDlSection(game);
+
+  document.getElementById('btn-owned').className = 'col-btn'+(col==='owned'?' active-owned':'');
+  document.getElementById('btn-playing').className = 'col-btn'+(col==='playing'?' active-playing':'');
+  document.getElementById('btn-wishlist').className = 'col-btn'+(col==='wishlist'?' active-wishlist':'');
+
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentGame = null;
+}
+
+function setCollection(type){
+  if(!currentGame) return;
+  if(COL[currentGame.id] === type){ delete COL[currentGame.id]; }
+  else { COL[currentGame.id] = type; }
+  saveCol();
+  openModal(currentGame);
+  render();
+}
+
+// ==================== EVENTS ====================
+document.getElementById('btn-owned').addEventListener('click', () => setCollection('owned'));
+document.getElementById('btn-playing').addEventListener('click', () => setCollection('playing'));
+document.getElementById('btn-wishlist').addEventListener('click', () => setCollection('wishlist'));
+document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if(e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeFilter = chip.dataset.filter;
+    render();
+  });
+});
+
+const searchEl = document.getElementById('search');
+const clearEl = document.getElementById('search-clear');
+searchEl.addEventListener('input', e => {
+  searchQuery = e.target.value.toLowerCase().trim();
+  clearEl.style.display = searchQuery ? 'block' : 'none';
+  render();
+});
+clearEl.addEventListener('click', () => {
+  searchEl.value = ''; searchQuery = '';
+  clearEl.style.display = 'none';
+  render();
+});
+
+let startY = 0;
+document.getElementById('modal').addEventListener('touchstart', e => startY = e.touches[0].clientY, {passive:true});
+document.getElementById('modal').addEventListener('touchend', e => {
+  if(e.changedTouches[0].clientY - startY > 80) closeModal();
+}, {passive:true});
+
+render();
+</script>
+</body>
+</html>
