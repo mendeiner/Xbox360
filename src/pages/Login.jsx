@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { validateInvite, useInvite } from '../lib/db'
 import { useAuth } from '../contexts/AuthContext'
 
-const EMAIL_DOMAIN = 'gametracker.local'
+const EMAIL_DOMAIN = 'users.gametracker.app'
 const toAuthEmail = (nickname) => `${nickname.trim().toLowerCase()}@${EMAIL_DOMAIN}`
 
 export default function Login() {
