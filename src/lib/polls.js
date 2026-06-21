@@ -48,9 +48,11 @@ export async function getActivePolls(userIds, viewerId) {
   }
 
   if (!userIds.length) return []
+  // Disambiguate the embed — PostgREST also sees a many-to-many polls<->profiles path via
+  // poll_votes, so a bare `profiles(...)` is rejected as ambiguous.
   const { data, error } = await supabase
     .from('polls')
-    .select('*, profiles(username, display_name, avatar_url)')
+    .select('*, profiles!polls_creator_id_fkey(username, display_name, avatar_url)')
     .in('creator_id', userIds)
     .or(`closes_at.is.null,closes_at.gt.${now.toISOString()}`)
     .order('created_at', { ascending: false })

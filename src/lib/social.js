@@ -57,9 +57,11 @@ export async function getFeedPosts(userIds, { limit = 30, before, viewerId } = {
     }))
   }
   if (!userIds.length) return []
+  // post_reactions also FKs to both feed_posts and profiles, so a bare `profiles(...)`
+  // embed is ambiguous (PostgREST sees it as a possible many-to-many path too).
   let query = supabase
     .from('feed_posts')
-    .select('*, profiles(username, display_name, avatar_url)')
+    .select('*, profiles!feed_posts_user_id_fkey(username, display_name, avatar_url)')
     .in('user_id', userIds)
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -106,7 +108,7 @@ export async function getRecentComments(userIds, limit = 20) {
   if (!userIds.length) return []
   const { data, error } = await supabase
     .from('post_comments')
-    .select('*, profiles(username, display_name, avatar_url), feed_posts!inner(id, user_id, console, game_id, action, profiles(username, display_name))')
+    .select('*, profiles(username, display_name, avatar_url), feed_posts!inner(id, user_id, console, game_id, action, profiles!feed_posts_user_id_fkey(username, display_name))')
     .in('feed_posts.user_id', userIds)
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -290,17 +292,17 @@ export async function getFriends(userId) {
   if (isMockMode()) {
     return MOCK_PROFILES.map(p => ({ id: p.id, username: p.username, displayName: p.display_name, avatarUrl: p.avatar_url }))
   }
+  // profiles is embedded twice (once per FK), so each needs its own alias — PostgREST
+  // rejects two embeds of the same target table sharing the default "profiles" name.
   const { data, error } = await supabase
     .from('friendships')
-    .select('requester_id, addressee_id, profiles!friendships_addressee_id_fkey(username, display_name, avatar_url), profiles!friendships_requester_id_fkey(username, display_name, avatar_url)')
+    .select('requester_id, addressee_id, addressee:profiles!friendships_addressee_id_fkey(username, display_name, avatar_url), requester:profiles!friendships_requester_id_fkey(username, display_name, avatar_url)')
     .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
     .eq('status', 'accepted')
   if (error) return []
   return data.map(f => {
     const friendId = f.requester_id === userId ? f.addressee_id : f.requester_id
-    const profile = f.requester_id === userId
-      ? f['profiles!friendships_addressee_id_fkey']
-      : f['profiles!friendships_requester_id_fkey']
+    const profile = f.requester_id === userId ? f.addressee : f.requester
     return { id: friendId, username: profile?.username, displayName: profile?.display_name, avatarUrl: profile?.avatar_url }
   })
 }
