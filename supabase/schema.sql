@@ -133,6 +133,15 @@ begin
     new.raw_user_meta_data->>'display_name'
   )
   on conflict (id) do nothing;
+
+  -- This app has no add-friend flow; every account is meant to see everyone
+  -- else's activity, so new signups are auto-friended with the whole site.
+  insert into public.friendships (requester_id, addressee_id, status)
+  select new.id, p.id, 'accepted'
+  from public.profiles p
+  where p.id <> new.id
+  on conflict (requester_id, addressee_id) do nothing;
+
   return new;
 end;
 $$;
@@ -140,6 +149,15 @@ $$;
 create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- Backfill: the auto-friend-everyone behavior above only fires for new signups,
+-- so make sure every existing profile pair is already mutually friended too.
+-- Safe to re-run — one row per unordered pair, skipped on conflict.
+insert into public.friendships (requester_id, addressee_id, status)
+select a.id, b.id, 'accepted'
+from public.profiles a, public.profiles b
+where a.id < b.id
+on conflict (requester_id, addressee_id) do nothing;
 
 -- ============================================================
 -- Social layer

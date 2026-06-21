@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { validateInvite, useInvite } from '../lib/db'
-import { createFriendship } from '../lib/social'
+import { validateInvite, useInvite, getProfileByUsername } from '../lib/db'
 import { useAuth } from '../contexts/AuthContext'
 
 const EMAIL_DOMAIN = 'users.gametracker.app'
@@ -42,10 +41,13 @@ export default function Login() {
     if (username.length < 3) { setError('Nome de usuário muito curto (mínimo 3 letras).'); setLoading(false); return }
     if (!displayName.trim()) { setError('Informe seu nome.'); setLoading(false); return }
 
+    const existing = await getProfileByUsername(username.trim().toLowerCase())
+    if (existing) { setError('Esse nome de usuário já está em uso.'); setLoading(false); return }
+
     const validInvite = await validateInvite(invite.trim().toUpperCase())
     if (!validInvite) { setError('Código de convite inválido ou esgotado.'); setLoading(false); return }
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email: toAuthEmail(username),
       password,
       options: { data: { username: username.trim().toLowerCase(), display_name: displayName.trim() } },
@@ -58,13 +60,6 @@ export default function Login() {
       setError('Erro ao usar o convite. Tente novamente.')
       setLoading(false)
       return
-    }
-
-    // Auto-friend the person whose invite code was used — there's no separate add-friend
-    // flow in the app, so this is the only way two users ever connect. Best-effort: the
-    // account is already created and the invite already consumed, so don't block on this.
-    if (validInvite.created_by && data.user?.id) {
-      try { await createFriendship(data.user.id, validInvite.created_by) } catch { /* non-fatal */ }
     }
 
     navigate('/home')

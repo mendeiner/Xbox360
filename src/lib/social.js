@@ -276,17 +276,9 @@ export async function getReactionSummary(postId, userId) {
 }
 
 // ── Friends ──────────────────────────────────────────────────────────────
-
-// Called right after a new signup that used someone else's invite code — the
-// friendships_write RLS policy requires requester_id = auth.uid(), so the new (just
-// authenticated) user must be the requester, with the inviter as addressee.
-export async function createFriendship(requesterId, addresseeId) {
-  if (isMockMode()) return
-  const { error } = await supabase
-    .from('friendships')
-    .insert({ requester_id: requesterId, addressee_id: addresseeId })
-  if (error) throw error
-}
+// There's no add-friend flow in the app — every signup is auto-friended with the
+// whole site by the `handle_new_user` trigger (see supabase/schema.sql), so
+// `getFriends` below is the only thing this layer needs to expose.
 
 export async function getFriends(userId) {
   if (isMockMode()) {
