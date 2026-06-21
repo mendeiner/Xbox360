@@ -58,6 +58,27 @@ export async function getProfileStats(userId) {
   }
 }
 
+// All-time genre breakdown across every played game — generalizes the per-year genre
+// logic in getYearInReview to "ever", for the profile's taste-fingerprint widget.
+export async function getTasteProfile(userId) {
+  const rows = await getAllStatusRows(userId)
+  const genreCounts = {}
+  for (const r of rows) {
+    if (!(r.joguei || r.zerado || r.cem_porcento)) continue
+    const game = r._console.games.find(g => g.id === r.game_id)
+    for (const genre of game?.genre || []) genreCounts[genre] = (genreCounts[genre] || 0) + 1
+  }
+  return Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).slice(0, 6)
+}
+
+// % of a console's total catalog the user has finished (zerado/cem_porcento) — the
+// per-console completion meter shown atop each profile "estante" shelf.
+export function getConsoleCompletion(rows, console_) {
+  if (!console_.games.length) return 0
+  const completed = rows.filter(r => r.console === console_.id && (r.zerado || r.cem_porcento)).length
+  return Math.round((completed / console_.games.length) * 100)
+}
+
 // Spotify-Wrapped-style yearly recap. Relies on game_statuses.updated_at (bumped by a
 // DB trigger on every update) since there's no per-flag timestamp — this is the only way
 // to approximate "beaten this year" instead of "beaten ever."

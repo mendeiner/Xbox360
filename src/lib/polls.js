@@ -1,0 +1,82 @@
+import { supabase } from './supabase'
+import { isMockMode } from './mockState'
+
+// Group polls ("qual jogo a galera deveria jogar agora") — session-only mock store, same
+// pattern as the other interaction stores. game_ids is a small array (2-4 entries).
+const MOCK_POLLS = []     // { id, creator_id, console, game_ids, created_at, closes_at, profiles }
+const MOCK_POLL_VOTES = [] // { poll_id, voter_id, game_id }
+
+export async function createPoll(creatorId, consoleId, gameIds, closesAt = null) {
+  if (isMockMode()) {
+    const poll = {
+      id: `mock-poll-${Date.now()}`, creator_id: creatorId, console: consoleId,
+      game_ids: gameIds, created_at: new Date().toISOString(), closes_at: closesAt,
+    }
+    MOCK_POLLS.unshift(poll)
+    return poll
+  }
+  const { data, error } = await supabase
+    .from('polls')
+    .insert({ console: consoleId, game_ids: gameIds, closes_at: closesAt })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function votePoll(pollId, gameId, voterId) {
+  if (isMockMode()) {
+    const existing = MOCK_POLL_VOTES.find(v => v.poll_id === pollId && v.voter_id === voterId)
+    if (existing) existing.game_id = gameId
+    else MOCK_POLL_VOTES.push({ poll_id: pollId, voter_id: voterId, game_id: gameId })
+    return
+  }
+  const { error } = await supabase
+    .from('poll_votes')
+    .upsert({ poll_id: pollId, game_id: gameId }, { onConflict: 'poll_id,voter_id' })
+  if (error) throw error
+}
+
+// Open polls (not past closes_at) from self+friends, with this viewer's vote attached.
+export async function getActivePolls(userIds, viewerId) {
+  const now = new Date()
+
+  if (isMockMode()) {
+    return MOCK_POLLS
+      .filter(p => userIds.includes(p.creator_id) && (!p.closes_at || new Date(p.closes_at) > now))
+      .map(p => ({ ...p, myVote: MOCK_POLL_VOTES.find(v => v.poll_id === p.id && v.voter_id === viewerId)?.game_id || null }))
+  }
+
+  if (!userIds.length) return []
+  const { data, error } = await supabase
+    .from('polls')
+    .select('*, profiles(username, display_name, avatar_url)')
+    .in('creator_id', userIds)
+    .or(`closes_at.is.null,closes_at.gt.${now.toISOString()}`)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  if (!data.length) return []
+
+  const pollIds = data.map(p => p.id)
+  const { data: myVotes } = await supabase
+    .from('poll_votes')
+    .select('poll_id, game_id')
+    .in('poll_id', pollIds)
+    .eq('voter_id', viewerId)
+
+  return data.map(p => ({ ...p, myVote: myVotes?.find(v => v.poll_id === p.id)?.game_id || null }))
+}
+
+export async function getPollResults(pollId) {
+  const votes = isMockMode()
+    ? MOCK_POLL_VOTES.filter(v => v.poll_id === pollId)
+    : await (async () => {
+      const { data, error } = await supabase.from('poll_votes').select('game_id').eq('poll_id', pollId)
+      if (error) throw error
+      return data
+    })()
+
+  const counts = {}
+  for (const v of votes) counts[v.game_id] = (counts[v.game_id] || 0) + 1
+  return { counts, total: votes.length }
+}

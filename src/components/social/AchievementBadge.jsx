@@ -1,8 +1,4 @@
-const TIER_STYLES = {
-  bronze: 'border-[#9c6b3f] text-[#cd9a66]',
-  silver: 'border-[#9ca3af] text-[#d1d5db]',
-  gold:   'border-[#d4af37] text-[#f4d873]',
-}
+import { TIER_STYLES } from '../../lib/social'
 
 export default function AchievementBadge({ achievement, unlocked }) {
   return (

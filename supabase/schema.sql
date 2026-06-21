@@ -328,6 +328,126 @@ create policy "notifications_update_own" on public.notifications for update
 create policy "notifications_insert" on public.notifications for insert
   to authenticated with check (actor_id = auth.uid());
 
+-- ── Duel votes (head-to-head game comparisons) ────────────────
+create table if not exists public.duel_votes (
+  id            uuid primary key default gen_random_uuid(),
+  voter_id      uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  console       text not null,
+  game_a_id     integer not null,
+  game_b_id     integer not null,
+  winner_game_id integer not null check (winner_game_id in (game_a_id, game_b_id)),
+  created_at    timestamptz default now()
+);
+
+-- One vote per voter per matchup — app code always normalizes game_a_id < game_b_id
+-- before inserting, so this also blocks an (a,b) row alongside a (b,a) duplicate.
+create unique index if not exists duel_votes_unique_vote
+  on public.duel_votes (voter_id, console, game_a_id, game_b_id);
+
+alter table public.duel_votes enable row level security;
+
+create policy "duel_votes_own" on public.duel_votes for all
+  to authenticated using (voter_id = auth.uid()) with check (voter_id = auth.uid());
+
+create policy "duel_votes_friend_read" on public.duel_votes for select
+  to authenticated using (
+    exists (
+      select 1 from public.friendships f
+      where f.status = 'accepted'
+      and (
+        (f.requester_id = auth.uid() and f.addressee_id = voter_id) or
+        (f.addressee_id = auth.uid() and f.requester_id = voter_id)
+      )
+    )
+  );
+
+-- ── Polls ("qual jogo jogar agora") ───────────────────────────
+create table if not exists public.polls (
+  id          uuid primary key default gen_random_uuid(),
+  creator_id  uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  console     text not null,
+  game_ids    jsonb not null,
+  created_at  timestamptz default now(),
+  closes_at   timestamptz
+);
+
+create table if not exists public.poll_votes (
+  poll_id     uuid not null references public.polls(id) on delete cascade,
+  voter_id    uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  game_id     integer not null,
+  created_at  timestamptz default now(),
+  primary key (poll_id, voter_id)
+);
+
+alter table public.polls      enable row level security;
+alter table public.poll_votes enable row level security;
+
+create policy "polls_own_write" on public.polls for insert
+  to authenticated with check (creator_id = auth.uid());
+
+create policy "polls_own_delete" on public.polls for delete
+  to authenticated using (creator_id = auth.uid());
+
+create policy "polls_read" on public.polls for select
+  to authenticated using (
+    creator_id = auth.uid() or
+    exists (
+      select 1 from public.friendships f
+      where f.status = 'accepted'
+      and (
+        (f.requester_id = auth.uid() and f.addressee_id = creator_id) or
+        (f.addressee_id = auth.uid() and f.requester_id = creator_id)
+      )
+    )
+  );
+
+create policy "poll_votes_read" on public.poll_votes for select
+  to authenticated using (
+    exists (
+      select 1 from public.polls p
+      where p.id = poll_id
+      and (
+        p.creator_id = auth.uid() or
+        exists (
+          select 1 from public.friendships f
+          where f.status = 'accepted'
+          and (
+            (f.requester_id = auth.uid() and f.addressee_id = p.creator_id) or
+            (f.addressee_id = auth.uid() and f.requester_id = p.creator_id)
+          )
+        )
+      )
+    )
+  );
+
+create policy "poll_votes_write" on public.poll_votes for all
+  to authenticated using (voter_id = auth.uid()) with check (voter_id = auth.uid());
+
+-- Rejects a vote for a game_id that isn't actually one of the poll's options — a check
+-- constraint can't reference another table, so this needs to be a trigger.
+create or replace function public.poll_votes_check_game_id()
+returns trigger as $$
+begin
+  if not exists (
+    select 1 from public.polls p
+    where p.id = new.poll_id
+    and p.game_ids @> to_jsonb(new.game_id)
+  ) then
+    raise exception 'game_id % is not one of poll %''s options', new.game_id, new.poll_id;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger poll_votes_check_game_id_trigger
+  before insert or update on public.poll_votes
+  for each row execute function public.poll_votes_check_game_id();
+
+-- Pin search_path (avoids the mutable-search-path lint) and stop anon/authenticated from
+-- calling this directly via PostgREST RPC — it's a trigger-only helper, not a public API.
+alter function public.poll_votes_check_game_id() set search_path = public;
+revoke execute on function public.poll_votes_check_game_id() from public, anon, authenticated;
+
 -- ── Avatar storage (profile pictures) ────────────────────────
 insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)

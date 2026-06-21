@@ -1,21 +1,19 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { getYearInReview } from '../../lib/collection'
+import { useHoverPopover } from '../../hooks/useHoverPopover'
 import YearRecapBody from './YearRecapBody'
+import CompatibilityBadge from './CompatibilityBadge'
 
 const recapCache = new Map() // friendId -> { year -> recap }, session-lived
 
 // Wraps a friend's avatar (passed as children) and shows that friend's yearly recap on
 // hover (desktop) or tap (mobile, since hover doesn't exist on touch) — the entry point
-// the friends Stories rail wires every avatar to.
-export default function FriendRecapPopover({ friendId, friendName, children }) {
-  const [open, setOpen] = useState(false)
+// the friends Stories rail wires every avatar to. Also surfaces the taste-compatibility
+// score against this friend, since it's already a "this friend" context popover.
+export default function FriendRecapPopover({ friendId, friendName, viewerId, children }) {
   const [year] = useState(new Date().getFullYear())
   const [recap, setRecap] = useState(null)
   const [loading, setLoading] = useState(false)
-  const hoverTimer = useRef(null)
-  const closeTimer = useRef(null)
-
-  const isTouch = typeof window !== 'undefined' && window.matchMedia?.('(hover: none)').matches
 
   const load = useCallback(() => {
     const cached = recapCache.get(friendId)?.[year]
@@ -30,29 +28,7 @@ export default function FriendRecapPopover({ friendId, friendName, children }) {
     })
   }, [friendId, year])
 
-  function openNow() {
-    clearTimeout(closeTimer.current)
-    setOpen(true)
-    load()
-  }
-
-  function handleMouseEnter() {
-    if (isTouch) return
-    hoverTimer.current = setTimeout(openNow, 300)
-  }
-  function handleMouseLeave() {
-    if (isTouch) return
-    clearTimeout(hoverTimer.current)
-    closeTimer.current = setTimeout(() => setOpen(false), 200)
-  }
-  function handleClick() {
-    if (!isTouch) return
-    setOpen(v => {
-      const next = !v
-      if (next) load()
-      return next
-    })
-  }
+  const { open, setOpen, isTouch, handleMouseEnter, handleMouseLeave, handleClick } = useHoverPopover({ onOpen: load })
 
   return (
     <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
@@ -73,6 +49,7 @@ export default function FriendRecapPopover({ friendId, friendName, children }) {
               Retrospectiva de {friendName}
             </p>
             <YearRecapBody recap={recap} year={year} loading={loading} />
+            {viewerId && <CompatibilityBadge userId={viewerId} friendId={friendId} />}
           </div>
         </>
       )}

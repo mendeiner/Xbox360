@@ -81,14 +81,16 @@ export async function getFriendStatuses(console_name, friendId) {
   return Object.fromEntries(data.map(r => [r.game_id, r]))
 }
 
+// Returns the invite row (so the caller can read `created_by` to friend the inviter)
+// or null if the code doesn't exist or is exhausted.
 export async function validateInvite(code) {
   const { data, error } = await supabase
     .from('invites')
     .select('*')
     .eq('code', code)
     .single()
-  if (error || !data) return false
-  return data.use_count < data.max_uses
+  if (error || !data) return null
+  return data.use_count < data.max_uses ? data : null
 }
 
 export async function useInvite(code) {

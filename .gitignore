@@ -1,5 +1,7 @@
 # Secrets — never commit
 .env
+.launcher_config.json
+.supabase_token
 
 # Logs
 logs
@@ -14,6 +16,7 @@ node_modules
 dist
 dist-ssr
 *.local
+__pycache__
 
 # Editor directories and files
 .vscode/*

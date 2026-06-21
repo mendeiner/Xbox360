@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Game Tracker Launcher — git commit & push, open site."""
+"""Game Tracker Launcher — git commit & push, open site, trigger Vercel deploy."""
 import tkinter as tk
-from tkinter import scrolledtext, messagebox
-import subprocess, threading, os, sys, webbrowser
+from tkinter import scrolledtext, messagebox, simpledialog
+import subprocess, threading, os, sys, webbrowser, json, hashlib, urllib.request
 
-WORK_DIR  = os.path.dirname(os.path.abspath(__file__))
-SITE_URL  = 'https://game-tracker-mendeiner.vercel.app'
+WORK_DIR    = os.path.dirname(os.path.abspath(__file__))
+SITE_URL    = 'https://xbox360.vercel.app'
+CONFIG_PATH = os.path.join(WORK_DIR, '.launcher_config.json')
 
 BG     = '#0f0f0f'
 CARD   = '#1a1a1a'
@@ -21,9 +22,37 @@ FONT = ('Helvetica Neue', 13) if sys.platform == 'darwin' else ('Segoe UI', 11)
 MONO = ('Menlo', 12)          if sys.platform == 'darwin' else ('Consolas', 11)
 
 
+def load_config():
+    try:
+        with open(CONFIG_PATH) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def check_password(cfg):
+    expected = cfg.get('password_hash')
+    if not expected:
+        return True  # no password configured, skip the gate
+    root = tk.Tk()
+    root.withdraw()
+    for _ in range(3):
+        pw = simpledialog.askstring('Game Tracker — Launcher', 'Senha:', show='*', parent=root)
+        if pw is None:
+            root.destroy()
+            return False
+        if hashlib.sha256(pw.encode()).hexdigest() == expected:
+            root.destroy()
+            return True
+        messagebox.showerror('Senha incorreta', 'Tente novamente.', parent=root)
+    root.destroy()
+    return False
+
+
 class Launcher(tk.Tk):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
+        self.config_data = config
         self.title('Game Tracker — Launcher')
         self.configure(bg=BG, padx=16, pady=16)
         self.resizable(True, True)
@@ -79,6 +108,10 @@ class Launcher(tk.Tk):
         self.b_status.pack(side='left', padx=(0, 6))
         self.b_log.pack(side='left')
 
+        if self.config_data.get('deploy_hook_url'):
+            self.b_deploy = self._btn(btn_row, '🚀  Deploy agora', self._deploy, XBOX)
+            self.b_deploy.pack(side='right')
+
     def _build_output_section(self):
         lf = tk.LabelFrame(self, text=' Output ', font=FONT,
                             bg=BG, fg=XBOX, bd=0, padx=4, pady=4)
@@ -115,8 +148,11 @@ class Launcher(tk.Tk):
         self.output.config(state='disabled')
 
     def _all_buttons(self):
-        return [self.b_add, self.b_commit, self.b_push, self.b_all,
+        btns = [self.b_add, self.b_commit, self.b_push, self.b_all,
                 self.b_site, self.b_status, self.b_log]
+        if hasattr(self, 'b_deploy'):
+            btns.append(self.b_deploy)
+        return btns
 
     def _set_buttons(self, enabled):
         state = 'normal' if enabled else 'disabled'
@@ -198,6 +234,21 @@ class Launcher(tk.Tk):
         webbrowser.open(SITE_URL)
         self._write(f'\n→ Abrindo {SITE_URL}\n', 'success')
 
+    def _deploy(self):
+        url = self.config_data.get('deploy_hook_url')
+        def do():
+            self._write(f'\n$ POST {url}\n', 'cmd')
+            try:
+                with urllib.request.urlopen(urllib.request.Request(url, method='POST'), timeout=15) as resp:
+                    self._write(f'✓ Deploy disparado (status {resp.status})\n', 'success')
+                    self._write(f'   {SITE_URL}\n', 'success')
+            except Exception as e:
+                self._write(f'✗ Erro: {e}\n', 'error')
+        self._thread(do)
+
 
 if __name__ == '__main__':
-    Launcher().mainloop()
+    cfg = load_config()
+    if not check_password(cfg):
+        sys.exit(0)
+    Launcher(cfg).mainloop()

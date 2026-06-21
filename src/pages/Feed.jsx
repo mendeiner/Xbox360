@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Nav from '../components/Nav'
-import FeedPostCard from '../components/social/FeedPostCard'
+import ActivityFeed from '../components/social/ActivityFeed'
 import UsersList from '../components/social/UsersList'
 import { useAuth } from '../contexts/AuthContext'
 import { useFriends } from '../hooks/useFriends'
@@ -12,30 +12,30 @@ export default function Feed() {
   const { user, profile } = useAuth()
   const { friends, loading: friendsLoading } = useFriends(user?.id)
 
-  const [posts, setPosts] = useState([])
+  // Small fetch kept only to sort UsersList by recency and feed the community-pulse right
+  // rail — the main timeline itself is fetched/paginated by ActivityFeed below.
+  const [latestPosts, setLatestPosts] = useState([])
   const [recentComments, setRecentComments] = useState([])
   const [stats, setStats] = useState(null)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!user) return
     const userIds = [user.id, ...friends.map(f => f.id)]
     let alive = true
     Promise.all([
-      getFeedPosts(userIds, { limit: 30, viewerId: user.id }),
+      getFeedPosts(userIds, { limit: 20, viewerId: user.id }),
       getRecentComments(userIds, 15),
       getProfileStats(user.id),
-    ]).then(([feedPosts, comments, profileStats]) => {
+    ]).then(([posts, comments, profileStats]) => {
       if (!alive) return
-      setPosts(feedPosts)
+      setLatestPosts(posts)
       setRecentComments(comments)
       setStats(profileStats)
-      setLoading(false)
     })
     return () => { alive = false }
   }, [user, friends])
 
-  const latestPostByUser = buildLatestPostByUser(posts)
+  const latestPostByUser = buildLatestPostByUser(latestPosts)
 
   return (
     <div className="min-h-screen bg-social-bg">
@@ -69,22 +69,13 @@ export default function Feed() {
               Atividades que seus amigos escolheram compartilhar.
             </p>
 
-            {loading ? (
-              <div className="flex items-center justify-center h-40">
-                <div className="w-6 h-6 border-2 border-social border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : posts.length === 0 ? (
-              <p className="text-gray-600 text-sm">
-                Nenhuma atividade compartilhada ainda. Marque um jogo como jogado/zerado/100% e escolha "Compartilhar no feed".
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {posts.map((post, i) => (
-                  <div key={post.id} className="fade-in-up" style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
-                    <FeedPostCard post={post} currentUserId={user?.id} />
-                  </div>
-                ))}
-              </div>
+            {user && (
+              <ActivityFeed
+                userIds={[user.id, ...friends.map(f => f.id)]}
+                viewerId={user.id}
+                currentUserId={user.id}
+                emptyMessage='Nenhuma atividade compartilhada ainda. Marque um jogo como jogado/zerado/100% e escolha "Compartilhar no feed".'
+              />
             )}
 
             {/* Community pulse — desktop: hidden here, shown in right rail. Mobile: shown below feed. */}

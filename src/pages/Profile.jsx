@@ -3,16 +3,51 @@ import { useParams } from 'react-router-dom'
 import Nav from '../components/Nav'
 import Top10Editor from '../components/social/Top10Editor'
 import AchievementBadge from '../components/social/AchievementBadge'
+import { coverSrc, coverObjectPosition } from '../consoles/dl'
+import { readyConsoles } from '../consoles/registry'
 import { useAuth } from '../contexts/AuthContext'
 import { getProfileByUsername, updateAvatar } from '../lib/db'
-import { getProfileStats, getAllStatusRows } from '../lib/collection'
+import { getProfileStats, getAllStatusRows, getTasteProfile, getConsoleCompletion } from '../lib/collection'
 import { ACHIEVEMENTS, getUserAchievements, checkAndUnlockAchievements, getFeedPosts, ACTION_LABEL } from '../lib/social'
 
 const TABS = [
+  { id: 'collection', label: 'Coleção' },
   { id: 'top10', label: 'Top 10' },
   { id: 'achievements', label: 'Conquistas' },
   { id: 'activity', label: 'Atividade' },
 ]
+
+// Groups this profile's status rows by console into "estante" shelves: the main row of
+// marked games, a completion %, and a softly-framed "Decepções" row (low-rated games the
+// user actually finished, not just owned/wanted) — the negative-signal feature, reusing
+// the existing 1-5 star rating instead of a new dislike flag.
+function buildShelves(rows) {
+  const byConsole = {}
+  for (const r of rows) (byConsole[r.console] ||= []).push(r)
+
+  return readyConsoles()
+    .map(console_ => {
+      const consoleRows = byConsole[console_.id] || []
+      const marked = consoleRows.filter(r => r.joguei || r.zerado || r.cem_porcento || r.quero)
+      if (!marked.length) return null
+
+      const games = marked
+        .map(r => ({ game: console_.games.find(g => g.id === r.game_id), row: r }))
+        .filter(x => x.game)
+
+      const decepcoes = games.filter(({ row }) =>
+        (row.joguei || row.zerado || row.cem_porcento) && row.rating && row.rating <= 2
+      )
+
+      return {
+        console: console_,
+        games,
+        decepcoes,
+        completion: getConsoleCompletion(rows, console_),
+      }
+    })
+    .filter(Boolean)
+}
 
 export default function Profile() {
   const { username } = useParams()
@@ -22,10 +57,11 @@ export default function Profile() {
   const [stats, setStats] = useState(null)
   const [unlocked, setUnlocked] = useState([])
   const [genres, setGenres] = useState([])
+  const [shelves, setShelves] = useState([])
   const [recentPosts, setRecentPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
-  const [tab, setTab] = useState('top10')
+  const [tab, setTab] = useState('collection')
 
   const isOwner = profile?.id === user?.id
 
@@ -36,22 +72,17 @@ export default function Profile() {
       if (!alive || !p) { setLoading(false); return }
       setProfile(p)
 
-      const [s, rows, unlockedRows] = await Promise.all([
+      const [s, rows, unlockedRows, taste] = await Promise.all([
         getProfileStats(p.id),
         getAllStatusRows(p.id),
         getUserAchievements(p.id),
+        getTasteProfile(p.id),
       ])
       if (!alive) return
       setStats(s)
       setUnlocked(unlockedRows.map(u => u.achievement_id))
-
-      const genreCounts = {}
-      for (const r of rows) {
-        if (!(r.joguei || r.zerado || r.cem_porcento)) continue
-        const game = r._console.games.find(g => g.id === r.game_id)
-        for (const genre of game?.genre || []) genreCounts[genre] = (genreCounts[genre] || 0) + 1
-      }
-      setGenres(Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).slice(0, 6))
+      setGenres(taste)
+      setShelves(buildShelves(rows))
 
       try {
         const posts = await getFeedPosts([p.id], { limit: 8 })
@@ -156,6 +187,64 @@ export default function Profile() {
             </button>
           ))}
         </div>
+
+        {tab === 'collection' && (
+          <section className="space-y-10">
+            {shelves.length === 0 ? (
+              <p className="text-gray-600 text-sm">Nenhum jogo marcado ainda.</p>
+            ) : (
+              shelves.map(shelf => (
+                <div key={shelf.console.id}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3
+                      className="text-base font-black tracking-tight pl-2.5 border-l-[3px] leading-none"
+                      style={{ borderColor: shelf.console.accentColor }}
+                    >
+                      {shelf.console.label}
+                    </h3>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{shelf.completion}% completo</span>
+                  </div>
+                  <div className="h-1 bg-[#161d35] mb-3">
+                    <div className="h-full bg-social" style={{ width: `${shelf.completion}%` }} />
+                  </div>
+
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {shelf.games.map(({ game }) => (
+                      <img
+                        key={game.id}
+                        src={coverSrc(game, shelf.console) || undefined}
+                        alt={game.title}
+                        title={game.title}
+                        className="w-16 h-[88px] object-cover bg-[#0a0a0a] shrink-0"
+                        style={{ objectPosition: coverObjectPosition(shelf.console) }}
+                        onError={e => { e.target.style.display = 'none' }}
+                      />
+                    ))}
+                  </div>
+
+                  {shelf.decepcoes.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-gray-600 mb-1.5">Decepções</p>
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {shelf.decepcoes.map(({ game, row }) => (
+                          <img
+                            key={game.id}
+                            src={coverSrc(game, shelf.console) || undefined}
+                            alt={game.title}
+                            title={`${game.title} · ★ ${row.rating}`}
+                            className="w-11 h-[60px] object-cover bg-[#0a0a0a] shrink-0 opacity-60"
+                            style={{ objectPosition: coverObjectPosition(shelf.console) }}
+                            onError={e => { e.target.style.display = 'none' }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </section>
+        )}
 
         {tab === 'top10' && (
           <section>

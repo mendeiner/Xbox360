@@ -3,8 +3,9 @@ import { useNavigate, Link } from 'react-router-dom'
 import Nav from '../components/Nav'
 import YearRecap from '../components/social/YearRecap'
 import UsersList from '../components/social/UsersList'
-import FeedPostCard from '../components/social/FeedPostCard'
-import RankingRow from '../components/social/RankingRow'
+import ActivityFeed from '../components/social/ActivityFeed'
+import DuelWidget from '../components/social/DuelWidget'
+import PollStrip from '../components/social/PollStrip'
 import GameCard from '../components/xbox360/GameCard'
 import GameModal from '../components/xbox360/GameModal'
 import { useAuth } from '../contexts/AuthContext'
@@ -42,16 +43,16 @@ export default function Home() {
   const [inviteCode, setInviteCode] = useState(null)
   const [copying, setCopying]   = useState(false)
 
+  // Small, separate fetch used only to sort the Stories rail by recency — the dominant
+  // feed section below fetches/paginates its own posts via ActivityFeed/useActivityFeed.
   const [feedPosts, setFeedPosts]       = useState([])
-  const [feedLoading, setFeedLoading]   = useState(true)
   const [rankingRows, setRankingRows]   = useState([])
   const [rankingLoading, setRankingLoading] = useState(true)
 
   useEffect(() => {
     if (!user) return
     const userIds = [user.id, ...friends.map(f => f.id)]
-    setFeedLoading(true)
-    getFeedPosts(userIds, { limit: 20, viewerId: user.id }).then(posts => { setFeedPosts(posts); setFeedLoading(false) })
+    getFeedPosts(userIds, { limit: 20, viewerId: user.id }).then(posts => setFeedPosts(posts))
   }, [user, friends])
 
   useEffect(() => {
@@ -140,55 +141,47 @@ export default function Home() {
 
       <main className="max-w-5xl mx-auto px-6 py-10">
 
-        {/* Year Recap — seasonal showpiece, first thing on the page */}
-        <YearRecap userId={user?.id} />
-
-        {/* Central Social hub — real Feed/Rankings content, with the users list on the left */}
-        <div className="grid lg:grid-cols-[220px_1fr] gap-6 mb-12">
-          <UsersList friends={friends} latestPostByUser={latestPostByUser} loading={friendsLoading} />
-
-          <div className="space-y-10 min-w-0">
-            <section>
-              <div className="flex items-baseline justify-between mb-3">
-                <h2 className="text-[11px] font-black uppercase tracking-[1.5px] text-social">Feed dos Amigos</h2>
-                <Link to="/feed" className="text-[11px] font-bold text-gray-500 hover:text-white">Ver tudo →</Link>
-              </div>
-              {feedLoading ? (
-                <div className="h-24 flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-social border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : feedPosts.length === 0 ? (
-                <p className="text-gray-600 text-sm">Nenhuma atividade compartilhada ainda.</p>
-              ) : (
-                <div className="space-y-3">
-                  {feedPosts.slice(0, 4).map(post => (
-                    <FeedPostCard key={post.id} post={post} currentUserId={user?.id} />
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section>
-              <div className="flex items-baseline justify-between mb-3">
-                <h2 className="text-[11px] font-black uppercase tracking-[1.5px] text-social">Melhores de Todos os Tempos</h2>
-                <Link to="/rankings" className="text-[11px] font-bold text-gray-500 hover:text-white">Ver tudo →</Link>
-              </div>
-              {rankingLoading ? (
-                <div className="h-24 flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-social border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : rankingRows.length === 0 ? (
-                <p className="text-gray-600 text-sm">Nenhum Top 10 foi salvo ainda.</p>
-              ) : (
-                <div className="space-y-1">
-                  {rankingRows.map((row, i) => (
-                    <RankingRow key={`${row.console.id}:${row.game.id}`} rank={i + 1} row={row} />
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
+        {/* Header row — page title left, hover-only self-recap affordance right */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-[11px] font-black uppercase tracking-[1.5px] text-social">Feed dos Amigos</h1>
+          <YearRecap userId={user?.id} />
         </div>
+
+        {/* Friends on the left, dominant infinite feed on the right */}
+        <div className="grid lg:grid-cols-[220px_1fr] gap-6 mb-12">
+          <UsersList friends={friends} latestPostByUser={latestPostByUser} loading={friendsLoading} viewerId={user?.id} />
+
+          <section className="min-w-0 space-y-6">
+            <DuelWidget userId={user?.id} />
+            {user && <PollStrip userId={user.id} userIds={[user.id, ...friends.map(f => f.id)]} />}
+
+            {user && (
+              <ActivityFeed
+                userIds={[user.id, ...friends.map(f => f.id)]}
+                viewerId={user.id}
+                currentUserId={user.id}
+              />
+            )}
+            <div className="text-right">
+              <Link to="/feed" className="text-[11px] font-bold text-gray-500 hover:text-white">Ver feed completo →</Link>
+            </div>
+          </section>
+        </div>
+
+        {/* Community ranking — demoted to a small link-out card, feed is the priority now */}
+        <Link
+          to="/rankings"
+          className="block mb-12 bg-surface-2 border border-surface-4 hover:border-social/40 px-5 py-4 transition-colors"
+        >
+          <p className="text-[11px] font-black uppercase tracking-[1.5px] text-social mb-1">Melhores de Todos os Tempos</p>
+          <p className="text-gray-500 text-sm">
+            {rankingLoading
+              ? 'Carregando ranking da comunidade…'
+              : rankingRows.length === 0
+                ? 'Nenhum Top 10 foi salvo ainda — ver ranking completo →'
+                : `${rankingRows[0]?.game?.title} lidera o ranking da comunidade — ver completo →`}
+          </p>
+        </Link>
 
         {/* Console picker */}
         <div className="mb-10 flex items-end justify-between">

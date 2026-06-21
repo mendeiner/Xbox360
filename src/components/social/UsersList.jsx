@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getConsole } from '../../consoles/registry'
 import { ACTION_LABEL } from '../../lib/social'
+import FriendRecapPopover from './FriendRecapPopover'
 
 function timeAgo(dateStr) {
   const ms = Date.now() - new Date(dateStr).getTime()
@@ -14,7 +15,7 @@ function timeAgo(dateStr) {
 
 // The "users tab" — every friend with name + photo on the left, each showing their last
 // shared game. A real, always-visible section (not a nav button), collapsible on mobile.
-export default function UsersList({ friends, latestPostByUser = {}, loading, forceOpen = false }) {
+export default function UsersList({ friends, latestPostByUser = {}, loading, forceOpen = false, viewerId }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -47,15 +48,21 @@ export default function UsersList({ friends, latestPostByUser = {}, loading, for
               const console_ = post && getConsole(post.console)
               const game = console_?.games.find(g => g.id === post.game_id)
               return (
-                <Link
-                  key={f.id}
-                  to={`/u/${f.username}`}
-                  className="flex items-center gap-3 px-2 py-2 hover:bg-white/5 transition-colors"
-                >
-                  <span className="w-10 h-10 bg-[#161d35] border border-[#222b4a] flex items-center justify-center text-sm font-black text-gray-400 shrink-0 overflow-hidden">
-                    {f.avatarUrl ? <img src={f.avatarUrl} alt="" className="w-full h-full object-cover" /> : f.username?.[0]?.toUpperCase()}
-                  </span>
-                  <div className="min-w-0">
+                <div key={f.id} className="flex items-center gap-3 px-2 py-2 hover:bg-white/5 transition-colors">
+                  {/* Avatar is the hover/tap recap trigger; kept separate from the profile
+                      link below to avoid nesting two interactive elements. */}
+                  {viewerId ? (
+                    <FriendRecapPopover friendId={f.id} friendName={f.displayName || f.username} viewerId={viewerId}>
+                      <span className="w-10 h-10 rounded-full bg-[#161d35] border border-[#222b4a] flex items-center justify-center text-sm font-black text-gray-400 shrink-0 overflow-hidden">
+                        {f.avatarUrl ? <img src={f.avatarUrl} alt="" className="w-full h-full object-cover" /> : f.username?.[0]?.toUpperCase()}
+                      </span>
+                    </FriendRecapPopover>
+                  ) : (
+                    <span className="w-10 h-10 rounded-full bg-[#161d35] border border-[#222b4a] flex items-center justify-center text-sm font-black text-gray-400 shrink-0 overflow-hidden">
+                      {f.avatarUrl ? <img src={f.avatarUrl} alt="" className="w-full h-full object-cover" /> : f.username?.[0]?.toUpperCase()}
+                    </span>
+                  )}
+                  <Link to={`/u/${f.username}`} className="min-w-0">
                     <p className="text-[13px] font-bold text-white truncate">{f.displayName || f.username}</p>
                     {game ? (
                       <p className="text-[10px] text-gray-500 truncate">
@@ -64,8 +71,8 @@ export default function UsersList({ friends, latestPostByUser = {}, loading, for
                     ) : (
                       <p className="text-[10px] text-gray-600">Sem atividade compartilhada</p>
                     )}
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               )
             })}
           </div>

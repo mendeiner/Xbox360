@@ -47,7 +47,8 @@ export async function createFeedPost(console_name, gameId, action, rating = null
 // FeedPostCard doesn't need a separate getReactionSummary round-trip per card.
 export async function getFeedPosts(userIds, { limit = 30, before, viewerId } = {}) {
   if (isMockMode()) {
-    return MOCK_FEED_POSTS.slice(0, limit).map(post => ({
+    const pool = before ? MOCK_FEED_POSTS.filter(p => new Date(p.created_at) < new Date(before)) : MOCK_FEED_POSTS
+    return pool.slice(0, limit).map(post => ({
       ...post,
       commentCount: (MOCK_COMMENTS_STORE[post.id] || []).length,
       reactionCounts: Object.values(MOCK_REACTIONS_STORE[post.id] || {})
@@ -111,6 +112,32 @@ export async function getRecentComments(userIds, limit = 20) {
     .limit(limit)
   if (error) throw error
   return data
+}
+
+// Recent achievement unlocks for self+friends — merged client-side with feed_posts by
+// useActivityFeed into one chronological timeline (kept as a separate query rather than a
+// 3-way DB union, see plan's "open risks" on merged-pagination correctness).
+export async function getRecentAchievementUnlocks(userIds, { limit = 30, before } = {}) {
+  if (isMockMode()) {
+    let rows = userIds.flatMap(id => MOCK_ACHIEVEMENTS_STORE[id] || [])
+      .map(u => ({ ...u, profiles: MOCK_PROFILES.find(p => p.id === u.user_id) }))
+    if (before) rows = rows.filter(r => new Date(r.unlocked_at) < new Date(before))
+    return rows
+      .sort((a, b) => new Date(b.unlocked_at) - new Date(a.unlocked_at))
+      .slice(0, limit)
+      .map(u => ({ ...u, achievement: achievementById(u.achievement_id) }))
+  }
+  if (!userIds.length) return []
+  let query = supabase
+    .from('user_achievements')
+    .select('*, profiles(username, display_name, avatar_url)')
+    .in('user_id', userIds)
+    .order('unlocked_at', { ascending: false })
+    .limit(limit)
+  if (before) query = query.lt('unlocked_at', before)
+  const { data, error } = await query
+  if (error) throw error
+  return data.map(u => ({ ...u, achievement: achievementById(u.achievement_id) }))
 }
 
 // ── Comments ─────────────────────────────────────────────────────────────
@@ -248,6 +275,17 @@ export async function getReactionSummary(postId, userId) {
 
 // ── Friends ──────────────────────────────────────────────────────────────
 
+// Called right after a new signup that used someone else's invite code — the
+// friendships_write RLS policy requires requester_id = auth.uid(), so the new (just
+// authenticated) user must be the requester, with the inviter as addressee.
+export async function createFriendship(requesterId, addresseeId) {
+  if (isMockMode()) return
+  const { error } = await supabase
+    .from('friendships')
+    .insert({ requester_id: requesterId, addressee_id: addresseeId })
+  if (error) throw error
+}
+
 export async function getFriends(userId) {
   if (isMockMode()) {
     return MOCK_PROFILES.map(p => ({ id: p.id, username: p.username, displayName: p.display_name, avatarUrl: p.avatar_url }))
@@ -332,6 +370,15 @@ export async function getCommunityRanking(limit = 50) {
 }
 
 // ── Achievements (definitions are JS, only unlocks persist) ────────────
+
+// Co-located with ACHIEVEMENTS since it's keyed by the same `tier` field — kept out of
+// AchievementBadge.jsx (a component file) so Fast Refresh doesn't complain about
+// non-component exports, and reused as-is by AchievementFeedCard.
+export const TIER_STYLES = {
+  bronze: 'border-[#9c6b3f] text-[#cd9a66]',
+  silver: 'border-[#9ca3af] text-[#d1d5db]',
+  gold:   'border-[#d4af37] text-[#f4d873]',
+}
 
 export const ACHIEVEMENTS = [
   { id: 'primeira_platina', label: 'Primeira Platina', description: 'Marque seu primeiro jogo como 100%.', tier: 'bronze' },

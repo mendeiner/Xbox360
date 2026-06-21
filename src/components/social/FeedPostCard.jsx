@@ -37,27 +37,27 @@ export default function FeedPostCard({ post, currentUserId, compact = false }) {
 
   return (
     <div className="bg-social-ink border border-[#222b4a]">
-      <div className="flex gap-4 p-4">
+      <div className="flex gap-5 p-5">
         <img
           src={coverSrc(game, console_) || undefined}
           alt=""
-          className="w-16 h-[88px] object-cover bg-[#0a0a0a] shrink-0"
+          className="w-20 h-[110px] object-cover bg-[#0a0a0a] shrink-0"
           style={{ objectPosition: coverObjectPosition(console_) }}
           onError={e => { e.target.style.display = 'none' }}
         />
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] text-white leading-snug">
+          <p className="text-base text-white leading-snug">
             <Link to={`/u/${post.profiles?.username}`} className="font-black hover:text-social">{username}</Link>
             <span className="text-gray-400"> {ACTION_LABEL[post.action]} </span>
             <span className="font-black">{game.title}</span>
           </p>
-          <p className="text-[11px] text-gray-500 font-semibold mt-1 uppercase tracking-wide">
+          <p className="text-[11px] text-gray-500 font-semibold mt-1.5 uppercase tracking-wide">
             {console_.label} · {new Date(post.created_at).toLocaleDateString('pt-BR')}
             {post.rating ? ` · ★ ${post.rating}` : ''}
           </p>
 
           {!compact && (
-            <div className="flex items-center gap-3 mt-3">
+            <div className="flex items-center gap-3 mt-4">
               <ReactionPicker
                 postId={post.id}
                 userId={currentUserId}
