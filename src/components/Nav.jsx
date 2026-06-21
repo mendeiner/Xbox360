@@ -16,6 +16,7 @@ export default function Nav() {
             <Link to="/home" className="text-xs font-semibold text-gray-400 hover:text-white transition-colors">Painel</Link>
             <Link to="/feed" className="text-xs font-semibold text-gray-400 hover:text-social transition-colors">Feed</Link>
             <Link to="/rankings" className="text-xs font-semibold text-gray-400 hover:text-social transition-colors">Rankings</Link>
+            <Link to="/polls" className="text-xs font-semibold text-gray-400 hover:text-social transition-colors">Votações</Link>
           </div>
         )}
       </div>

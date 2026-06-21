@@ -121,22 +121,22 @@ export async function getProfileByUsername(username) {
   return data
 }
 
-export async function updateAvatar(userId, file) {
-  if (isMockMode()) return URL.createObjectURL(file)
-  const ext = file.name.split('.').pop()
-  const path = `${userId}.${ext}`
+export async function updateAvatar(userId, blob) {
+  if (isMockMode()) return URL.createObjectURL(blob)
+  const path = `${userId}.webp`
   const { error: uploadError } = await supabase.storage
     .from('avatars')
-    .upload(path, file, { upsert: true })
+    .upload(path, blob, { upsert: true, contentType: 'image/webp' })
   if (uploadError) throw uploadError
 
   const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+  const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`
   const { error } = await supabase
     .from('profiles')
-    .update({ avatar_url: publicUrl })
+    .update({ avatar_url: cacheBustedUrl })
     .eq('id', userId)
   if (error) throw error
-  return publicUrl
+  return cacheBustedUrl
 }
 
 export async function generateInvite(userId) {

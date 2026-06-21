@@ -73,6 +73,7 @@ alter table public.invites       enable row level security;
 -- profiles: authenticated users can read all, write only their own
 create policy "profiles_read"  on public.profiles for select to authenticated using (true);
 create policy "profiles_write" on public.profiles for insert to authenticated with check (id = auth.uid());
+create policy "profiles_update" on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
 -- game_statuses: users read/write their own; friends can read each other's
 create policy "statuses_own_read"   on public.game_statuses for select to authenticated using (user_id = auth.uid());

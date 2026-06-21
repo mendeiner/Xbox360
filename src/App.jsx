@@ -9,6 +9,7 @@ import SNES      from './pages/SNES'
 import Feed      from './pages/Feed'
 import Profile   from './pages/Profile'
 import Rankings  from './pages/Rankings'
+import Polls     from './pages/Polls'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -39,6 +40,7 @@ export default function App() {
       <Route path="/feed"      element={<PrivateRoute><Feed /></PrivateRoute>} />
       <Route path="/u/:username" element={<PrivateRoute><Profile /></PrivateRoute>} />
       <Route path="/rankings"  element={<PrivateRoute><Rankings /></PrivateRoute>} />
+      <Route path="/polls"     element={<PrivateRoute><Polls /></PrivateRoute>} />
       <Route path="*"          element={<Navigate to="/" replace />} />
     </Routes>
   )

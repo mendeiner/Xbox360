@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Game Tracker Launcher — git commit & push, open site, trigger Vercel deploy."""
 import tkinter as tk
-from tkinter import scrolledtext, messagebox, simpledialog
-import subprocess, threading, os, sys, webbrowser, json, hashlib, urllib.request
+from tkinter import scrolledtext, messagebox
+import subprocess, threading, os, sys, webbrowser, json, urllib.request
 
 WORK_DIR    = os.path.dirname(os.path.abspath(__file__))
 SITE_URL    = 'https://xbox360.vercel.app'
@@ -28,25 +28,6 @@ def load_config():
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
-
-
-def check_password(cfg):
-    expected = cfg.get('password_hash')
-    if not expected:
-        return True  # no password configured, skip the gate
-    root = tk.Tk()
-    root.withdraw()
-    for _ in range(3):
-        pw = simpledialog.askstring('Game Tracker — Launcher', 'Senha:', show='*', parent=root)
-        if pw is None:
-            root.destroy()
-            return False
-        if hashlib.sha256(pw.encode()).hexdigest() == expected:
-            root.destroy()
-            return True
-        messagebox.showerror('Senha incorreta', 'Tente novamente.', parent=root)
-    root.destroy()
-    return False
 
 
 class Launcher(tk.Tk):
@@ -249,6 +230,4 @@ class Launcher(tk.Tk):
 
 if __name__ == '__main__':
     cfg = load_config()
-    if not check_password(cfg):
-        sys.exit(0)
     Launcher(cfg).mainloop()

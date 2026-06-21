@@ -3,18 +3,22 @@ import { useParams } from 'react-router-dom'
 import Nav from '../components/Nav'
 import Top10Editor from '../components/social/Top10Editor'
 import AchievementBadge from '../components/social/AchievementBadge'
+import AvatarCropModal from '../components/social/AvatarCropModal'
+import PollResultCard from '../components/social/PollResultCard'
 import { coverSrc, coverObjectPosition } from '../consoles/dl'
 import { readyConsoles } from '../consoles/registry'
 import { useAuth } from '../contexts/AuthContext'
 import { getProfileByUsername, updateAvatar } from '../lib/db'
 import { getProfileStats, getAllStatusRows, getTasteProfile, getConsoleCompletion } from '../lib/collection'
 import { ACHIEVEMENTS, getUserAchievements, checkAndUnlockAchievements, getFeedPosts, ACTION_LABEL } from '../lib/social'
+import { getClosedPollsByCreator, getPollResults } from '../lib/polls'
 
 const TABS = [
   { id: 'collection', label: 'Coleção' },
   { id: 'top10', label: 'Top 10' },
   { id: 'achievements', label: 'Conquistas' },
   { id: 'activity', label: 'Atividade' },
+  { id: 'polls', label: 'Votações' },
 ]
 
 // Groups this profile's status rows by console into "estante" shelves: the main row of
@@ -59,8 +63,11 @@ export default function Profile() {
   const [genres, setGenres] = useState([])
   const [shelves, setShelves] = useState([])
   const [recentPosts, setRecentPosts] = useState([])
+  const [closedPolls, setClosedPolls] = useState([])
+  const [pollResults, setPollResults] = useState({})
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [cropSrc, setCropSrc] = useState(null)
   const [tab, setTab] = useState('collection')
 
   const isOwner = profile?.id === user?.id
@@ -89,6 +96,14 @@ export default function Profile() {
         if (alive) setRecentPosts(posts)
       } catch { /* feed_posts may be empty for this user, ignore */ }
 
+      try {
+        const polls = await getClosedPollsByCreator(p.id)
+        if (alive) setClosedPolls(polls)
+        const res = {}
+        await Promise.all(polls.map(async poll => { res[poll.id] = await getPollResults(poll.id) }))
+        if (alive) setPollResults(res)
+      } catch { /* no closed polls yet, ignore */ }
+
       setLoading(false)
     })
     return () => { alive = false }
@@ -102,13 +117,20 @@ export default function Profile() {
 
   const totalGames = stats?.total ?? 0
 
-  async function handleAvatarChange(e) {
+  function handleAvatarChange(e) {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file || !user) return
+    setCropSrc(URL.createObjectURL(file))
+  }
+
+  async function handleCropSave(blob) {
+    if (!user) return
     setUploading(true)
     try {
-      const url = await updateAvatar(user.id, file)
+      const url = await updateAvatar(user.id, blob)
       setProfile(p => ({ ...p, avatar_url: url }))
+      setCropSrc(null)
     } finally {
       setUploading(false)
     }
@@ -137,6 +159,13 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-social-bg">
       <Nav />
+      {cropSrc && (
+        <AvatarCropModal
+          imageSrc={cropSrc}
+          onCancel={() => setCropSrc(null)}
+          onSave={handleCropSave}
+        />
+      )}
       <main className="max-w-3xl mx-auto px-6 py-10">
 
         {/* Header */}
@@ -294,6 +323,18 @@ export default function Profile() {
 
             {genres.length === 0 && recentPosts.length === 0 && (
               <p className="text-gray-600 text-sm">Nenhuma atividade ainda.</p>
+            )}
+          </section>
+        )}
+
+        {tab === 'polls' && (
+          <section className="space-y-3">
+            {closedPolls.length === 0 ? (
+              <p className="text-gray-600 text-sm">Nenhuma votação encerrada ainda.</p>
+            ) : (
+              closedPolls.map(poll => (
+                <PollResultCard key={poll.id} poll={poll} results={pollResults[poll.id]} />
+              ))
             )}
           </section>
         )}

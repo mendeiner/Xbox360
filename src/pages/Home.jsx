@@ -149,12 +149,13 @@ export default function Home() {
 
         {/* Friends on the left, dominant infinite feed on the right */}
         <div className="grid lg:grid-cols-[220px_1fr] gap-6 mb-12">
-          <UsersList friends={friends} latestPostByUser={latestPostByUser} loading={friendsLoading} viewerId={user?.id} />
+          <div className="space-y-6">
+            <UsersList friends={friends} latestPostByUser={latestPostByUser} loading={friendsLoading} viewerId={user?.id} />
+            {user && <PollStrip userId={user.id} userIds={[user.id, ...friends.map(f => f.id)]} />}
+            <DuelWidget userId={user?.id} />
+          </div>
 
           <section className="min-w-0 space-y-6">
-            <DuelWidget userId={user?.id} />
-            {user && <PollStrip userId={user.id} userIds={[user.id, ...friends.map(f => f.id)]} />}
-
             {user && (
               <ActivityFeed
                 userIds={[user.id, ...friends.map(f => f.id)]}
