@@ -11,6 +11,7 @@ export default {
         gcube:   { DEFAULT: '#6a0dad', light: '#8b15d4' },
         wii:     { DEFAULT: '#4a4a4a', light: '#666' },
         surface: { 1: '#0f0f0f', 2: '#1a1a1a', 3: '#252525', 4: '#333' },
+        social:  { DEFAULT: '#FF4D4D', light: '#FF7A7A', dark: '#cc3a3a', bg: '#0a0e1a', ink: '#10162a' },
       },
       fontFamily: { sans: ['Montserrat', 'sans-serif'] },
     },

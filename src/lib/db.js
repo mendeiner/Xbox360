@@ -1,6 +1,15 @@
 import { supabase } from './supabase'
+import { setMockMode as setSharedMockMode, isMockMode } from './mockState'
+import { getMockProfileByUsername } from './mockSocialData'
+
+// ── Mock mode (localStorage) ──────────────────────────────────────────────────
+export function setMockMode(on) { setSharedMockMode(on) }
+const mockKey = c => `mock_statuses_${c}`
 
 export async function getMyStatuses(console_name) {
+  if (isMockMode()) {
+    return JSON.parse(localStorage.getItem(mockKey(console_name)) || '{}')
+  }
   const { data, error } = await supabase
     .from('game_statuses')
     .select('*')
@@ -10,6 +19,12 @@ export async function getMyStatuses(console_name) {
 }
 
 export async function setFlag(console_name, gameId, flag, value) {
+  if (isMockMode()) {
+    const stored = JSON.parse(localStorage.getItem(mockKey(console_name)) || '{}')
+    stored[gameId] = { ...(stored[gameId] || {}), [flag]: value }
+    localStorage.setItem(mockKey(console_name), JSON.stringify(stored))
+    return
+  }
   const { error } = await supabase
     .from('game_statuses')
     .upsert({ console: console_name, game_id: gameId, [flag]: value }, {
@@ -19,6 +34,12 @@ export async function setFlag(console_name, gameId, flag, value) {
 }
 
 export async function setRating(console_name, gameId, rating) {
+  if (isMockMode()) {
+    const stored = JSON.parse(localStorage.getItem(mockKey(console_name)) || '{}')
+    stored[gameId] = { ...(stored[gameId] || {}), rating }
+    localStorage.setItem(mockKey(console_name), JSON.stringify(stored))
+    return
+  }
   const { error } = await supabase
     .from('game_statuses')
     .upsert({ console: console_name, game_id: gameId, rating }, {
@@ -28,6 +49,15 @@ export async function setRating(console_name, gameId, rating) {
 }
 
 export async function getConsoleCounts(console_name, userId) {
+  if (isMockMode()) {
+    const stored = JSON.parse(localStorage.getItem(mockKey(console_name)) || '{}')
+    const rows = Object.values(stored)
+    return {
+      joguei: rows.filter(r => r.joguei).length,
+      zerado: rows.filter(r => r.zerado).length,
+      cem_porcento: rows.filter(r => r.cem_porcento).length,
+    }
+  }
   const { data, error } = await supabase
     .from('game_statuses')
     .select('joguei, zerado, cem_porcento')
@@ -65,13 +95,6 @@ export async function useInvite(code) {
   await supabase.rpc('increment_invite_use', { invite_code: code })
 }
 
-export async function createProfile(userId, username) {
-  const { error } = await supabase
-    .from('profiles')
-    .insert({ id: userId, username })
-  if (error) throw error
-}
-
 export async function getProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
@@ -82,32 +105,36 @@ export async function getProfile(userId) {
   return data
 }
 
-export async function getFriends(userId) {
+export async function getProfileByUsername(username) {
+  if (isMockMode()) {
+    if (username === 'BrunoTeste') return { id: 'mock-user', username: 'BrunoTeste', display_name: 'Bruno (Teste)', avatar_url: null, created_at: new Date().toISOString() }
+    return getMockProfileByUsername(username)
+  }
   const { data, error } = await supabase
-    .from('friendships')
-    .select('requester_id, addressee_id, profiles!friendships_addressee_id_fkey(username), profiles!friendships_requester_id_fkey(username)')
-    .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
-    .eq('status', 'accepted')
-  if (error) return []
-  return data.map(f => {
-    const friendId = f.requester_id === userId ? f.addressee_id : f.requester_id
-    const profile = f.requester_id === userId
-      ? f['profiles!friendships_addressee_id_fkey']
-      : f['profiles!friendships_requester_id_fkey']
-    return { id: friendId, username: profile?.username }
-  })
+    .from('profiles')
+    .select('*')
+    .eq('username', username)
+    .single()
+  if (error) return null
+  return data
 }
 
-export async function getRecentActivity(friendIds) {
-  if (!friendIds.length) return []
-  const { data, error } = await supabase
-    .from('activities')
-    .select('*, profiles(username)')
-    .in('user_id', friendIds)
-    .order('created_at', { ascending: false })
-    .limit(30)
-  if (error) return []
-  return data
+export async function updateAvatar(userId, file) {
+  if (isMockMode()) return URL.createObjectURL(file)
+  const ext = file.name.split('.').pop()
+  const path = `${userId}.${ext}`
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true })
+  if (uploadError) throw uploadError
+
+  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+  const { error } = await supabase
+    .from('profiles')
+    .update({ avatar_url: publicUrl })
+    .eq('id', userId)
+  if (error) throw error
+  return publicUrl
 }
 
 export async function generateInvite(userId) {

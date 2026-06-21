@@ -1,12 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { validateInvite, useInvite, createProfile } from '../lib/db'
+import { validateInvite, useInvite } from '../lib/db'
+import { useAuth } from '../contexts/AuthContext'
+
+const EMAIL_DOMAIN = 'gametracker.local'
+const toAuthEmail = (nickname) => `${nickname.trim().toLowerCase()}@${EMAIL_DOMAIN}`
 
 export default function Login() {
   const navigate    = useNavigate()
+  const { mockLogin } = useAuth()
   const [tab, setTab]         = useState('entrar')   // 'entrar' | 'criar'
-  const [email, setEmail]     = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
   const [invite, setInvite]   = useState('')
@@ -23,8 +28,8 @@ export default function Login() {
   async function handleLogin(e) {
     e.preventDefault()
     setError(''); setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setError(error.message); setLoading(false); return }
+    const { error } = await supabase.auth.signInWithPassword({ email: toAuthEmail(username), password })
+    if (error) { setError('Usuário ou senha inválidos.'); setLoading(false); return }
     navigate('/home')
   }
 
@@ -34,18 +39,22 @@ export default function Login() {
 
     if (!username.trim()) { setError('Escolha um nome de usuário.'); setLoading(false); return }
     if (username.length < 3) { setError('Nome de usuário muito curto (mínimo 3 letras).'); setLoading(false); return }
+    if (!displayName.trim()) { setError('Informe seu nome.'); setLoading(false); return }
 
     const validInvite = await validateInvite(invite.trim().toUpperCase())
     if (!validInvite) { setError('Código de convite inválido ou esgotado.'); setLoading(false); return }
 
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { error } = await supabase.auth.signUp({
+      email: toAuthEmail(username),
+      password,
+      options: { data: { username: username.trim().toLowerCase(), display_name: displayName.trim() } },
+    })
     if (error) { setError(error.message); setLoading(false); return }
 
     try {
-      await createProfile(data.user.id, username.trim().toLowerCase())
       await useInvite(invite.trim().toUpperCase())
     } catch {
-      setError('Erro ao criar perfil. Tente novamente.')
+      setError('Erro ao usar o convite. Tente novamente.')
       setLoading(false)
       return
     }
@@ -88,14 +97,13 @@ export default function Login() {
           {tab === 'criar' && (
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Nome de usuário
+                Nome completo
               </label>
               <input
                 type="text"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                placeholder="brunomilesi"
-                autoCapitalize="none"
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                placeholder="Bruno Milesi"
                 className="bg-surface-3 border border-surface-4 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-xbox transition-colors placeholder-gray-600"
                 required
               />
@@ -104,13 +112,14 @@ export default function Login() {
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              E-mail
+              Nome de usuário
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="voce@email.com"
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="brunomilesi"
+              autoCapitalize="none"
               className="bg-surface-3 border border-surface-4 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-xbox transition-colors placeholder-gray-600"
               required
             />
@@ -164,6 +173,15 @@ export default function Login() {
       </div>
 
       <p className="mt-6 text-gray-600 text-xs">Precisa de um convite? Peça a um amigo.</p>
+
+      {import.meta.env.DEV && (
+        <button
+          onClick={() => { mockLogin(); navigate('/home') }}
+          className="mt-4 text-xs text-gray-600 hover:text-gray-400 underline underline-offset-2 transition-colors"
+        >
+          [DEV] Entrar como Bruno (sem Supabase)
+        </button>
+      )}
     </div>
   )
 }

@@ -119,8 +119,12 @@ $$;
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer as $$
 begin
-  insert into public.profiles (id, username)
-  values (new.id, split_part(new.email, '@', 1))
+  insert into public.profiles (id, username, display_name)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+    new.raw_user_meta_data->>'display_name'
+  )
   on conflict (id) do nothing;
   return new;
 end;
@@ -129,3 +133,213 @@ $$;
 create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- ============================================================
+-- Social layer
+-- ============================================================
+
+-- ── game_statuses.updated_at (needed for year recap / achievements) ──
+alter table public.game_statuses add column if not exists updated_at timestamptz default now();
+
+create or replace function public.touch_game_statuses_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists game_statuses_touch_updated_at on public.game_statuses;
+create trigger game_statuses_touch_updated_at
+  before update on public.game_statuses
+  for each row execute function public.touch_game_statuses_updated_at();
+
+-- ── Feed posts (opt-in only, never auto-backfilled) ──────────
+create table if not exists public.feed_posts (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  console     text not null,
+  game_id     integer not null,
+  action      text not null check (action in ('joguei','zerado','cem_porcento')),
+  rating      numeric(2,1),
+  created_at  timestamptz default now()
+);
+
+alter table public.feed_posts enable row level security;
+
+create policy "feed_posts_own" on public.feed_posts for all
+  to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create policy "feed_posts_friend_read" on public.feed_posts for select
+  to authenticated using (
+    exists (
+      select 1 from public.friendships f
+      where f.status = 'accepted'
+      and (
+        (f.requester_id = auth.uid() and f.addressee_id = user_id) or
+        (f.addressee_id = auth.uid() and f.requester_id = user_id)
+      )
+    )
+  );
+
+-- ── Comments on feed posts ───────────────────────────────────
+create table if not exists public.post_comments (
+  id          uuid primary key default gen_random_uuid(),
+  post_id     uuid not null references public.feed_posts(id) on delete cascade,
+  user_id     uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  body        text not null check (char_length(body) <= 1000),
+  created_at  timestamptz default now()
+);
+
+alter table public.post_comments enable row level security;
+
+create policy "post_comments_read" on public.post_comments for select
+  to authenticated using (
+    exists (
+      select 1 from public.feed_posts p
+      where p.id = post_id
+      and (
+        p.user_id = auth.uid() or
+        exists (
+          select 1 from public.friendships f
+          where f.status = 'accepted'
+          and (
+            (f.requester_id = auth.uid() and f.addressee_id = p.user_id) or
+            (f.addressee_id = auth.uid() and f.requester_id = p.user_id)
+          )
+        )
+      )
+    )
+  );
+
+create policy "post_comments_insert" on public.post_comments for insert
+  to authenticated with check (
+    user_id = auth.uid() and
+    exists (
+      select 1 from public.feed_posts p
+      where p.id = post_id
+      and (
+        p.user_id = auth.uid() or
+        exists (
+          select 1 from public.friendships f
+          where f.status = 'accepted'
+          and (
+            (f.requester_id = auth.uid() and f.addressee_id = p.user_id) or
+            (f.addressee_id = auth.uid() and f.requester_id = p.user_id)
+          )
+        )
+      )
+    )
+  );
+
+create policy "post_comments_delete" on public.post_comments for delete
+  to authenticated using (
+    user_id = auth.uid() or
+    exists (select 1 from public.feed_posts p where p.id = post_id and p.user_id = auth.uid())
+  );
+
+-- ── Reactions on feed posts (fixed glyph set, one per user per post) ──
+create table if not exists public.post_reactions (
+  post_id     uuid not null references public.feed_posts(id) on delete cascade,
+  user_id     uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  reaction    text not null check (reaction in
+                ('fire','laugh','mind_blown','skull','clap','100','goat','same')),
+  created_at  timestamptz default now(),
+  primary key (post_id, user_id)
+);
+
+alter table public.post_reactions enable row level security;
+
+create policy "post_reactions_read" on public.post_reactions for select
+  to authenticated using (
+    exists (
+      select 1 from public.feed_posts p
+      where p.id = post_id
+      and (
+        p.user_id = auth.uid() or
+        exists (
+          select 1 from public.friendships f
+          where f.status = 'accepted'
+          and (
+            (f.requester_id = auth.uid() and f.addressee_id = p.user_id) or
+            (f.addressee_id = auth.uid() and f.requester_id = p.user_id)
+          )
+        )
+      )
+    )
+  );
+
+create policy "post_reactions_write" on public.post_reactions for all
+  to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ── Personal Top 10 (cross-console, also feeds community ranking) ──
+create table if not exists public.top10_entries (
+  user_id     uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  position    integer not null check (position between 1 and 10),
+  console     text not null,
+  game_id     integer not null,
+  created_at  timestamptz default now(),
+  primary key (user_id, position)
+);
+
+alter table public.top10_entries enable row level security;
+
+create policy "top10_read_all" on public.top10_entries for select
+  to authenticated using (true);
+
+create policy "top10_write_own" on public.top10_entries for all
+  to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ── Achievement unlocks (definitions live in JS, not here) ──
+create table if not exists public.user_achievements (
+  user_id         uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  achievement_id  text not null,
+  unlocked_at     timestamptz default now(),
+  primary key (user_id, achievement_id)
+);
+
+alter table public.user_achievements enable row level security;
+
+create policy "user_achievements_read_all" on public.user_achievements for select
+  to authenticated using (true);
+
+create policy "user_achievements_write_own" on public.user_achievements for all
+  to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ── Notifications ─────────────────────────────────────────────
+create table if not exists public.notifications (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references public.profiles(id) on delete cascade,
+  actor_id    uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  type        text not null check (type in ('comment','reaction','achievement')),
+  post_id     uuid references public.feed_posts(id) on delete cascade,
+  read        boolean default false,
+  created_at  timestamptz default now()
+);
+
+alter table public.notifications enable row level security;
+
+create policy "notifications_read_own" on public.notifications for select
+  to authenticated using (user_id = auth.uid());
+
+create policy "notifications_update_own" on public.notifications for update
+  to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create policy "notifications_insert" on public.notifications for insert
+  to authenticated with check (actor_id = auth.uid());
+
+-- ── Avatar storage (profile pictures) ────────────────────────
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+create policy "avatars_public_read" on storage.objects for select
+  using (bucket_id = 'avatars');
+
+create policy "avatars_own_write" on storage.objects for insert
+  to authenticated with check (bucket_id = 'avatars' and owner = auth.uid());
+
+create policy "avatars_own_update" on storage.objects for update
+  to authenticated using (bucket_id = 'avatars' and owner = auth.uid());
+
+alter table public.profiles add column if not exists avatar_url text;

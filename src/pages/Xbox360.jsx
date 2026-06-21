@@ -1,221 +1,256 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Link } from 'react-router-dom'
-import { XBOX360_GAMES } from '../data/xbox360/games'
-import { getMyStatuses, setFlag as dbSetFlag } from '../lib/db'
-import { useAuth } from '../contexts/AuthContext'
-import GameCard   from '../components/xbox360/GameCard'
-import GameModal  from '../components/xbox360/GameModal'
-import FilterChip from '../components/xbox360/FilterChip'
+import { useConsolePage, useDragScroll } from '../consoles/useConsolePage'
+import { coverSrc } from '../consoles/dl'
+import GameCard from '../components/xbox360/GameCard'
+import GameModal from '../components/xbox360/GameModal'
+import Sidebar from '../components/xbox360/Sidebar'
 import Nav from '../components/Nav'
+import { useState } from 'react'
 
-// All unique genres from the game data
-const ALL_GENRES = [...new Set(XBOX360_GAMES.flatMap(g => g.genre || []))].sort()
+const CONSOLE_ID = 'xbox360'
 
-const TYPE_FILTERS = [
-  { id: 'retail', label: 'Retail' },
-  { id: 'arcade', label: 'XBLA'   },
-  { id: 'kinect', label: 'Kinect' },
-  { id: 'indie',  label: 'Indie'  },
-]
-const STATUS_FILTERS = [
-  { id: 'joguei',       label: 'Joguei'   },
-  { id: 'zerado',       label: 'Zerado'   },
-  { id: 'cem_porcento', label: '100%'     },
-  { id: 'quero',        label: 'Quero'    },
-  { id: 'nao_joguei',  label: 'Não joguei' },
-]
-const SPECIAL_FILTERS = [
-  { id: 'dl',      label: 'Download' },
-  { id: 'localMP', label: 'Co-op'    },
-  { id: 'online',  label: 'Online'   },
+// ─── Curated rows (matches local app exactly) ─────────────────────────────────
+const FEATURED = [
+  'Halo 3','Gears of War','Mass Effect 2','BioShock','The Elder Scrolls V: Skyrim',
+  'Red Dead Redemption','Grand Theft Auto V','Batman: Arkham City','Dark Souls',
+  'Portal 2','Borderlands 2','The Witcher 2','Dishonored',
+  'Forza Motorsport 4','Left 4 Dead 2','Bayonetta','Trials Evolution',
 ]
 
-function matchesFilter(game, active, statuses) {
-  for (const f of active) {
-    // Status filters
-    if (f === 'joguei'       && !statuses[game.id]?.joguei)       return false
-    if (f === 'zerado'       && !statuses[game.id]?.zerado)       return false
-    if (f === 'cem_porcento' && !statuses[game.id]?.cem_porcento) return false
-    if (f === 'quero'        && !statuses[game.id]?.quero)        return false
-    if (f === 'nao_joguei') {
-      const s = statuses[game.id]
-      if (s?.joguei || s?.zerado || s?.cem_porcento)              return false
-    }
-    // Type filters
-    if (['retail','arcade','kinect','indie'].includes(f) && game.type !== f) return false
-    // Special
-    if (f === 'dl'      && !game.dl)                     return false
-    if (f === 'localMP' && !game.localMP)                return false
-    if (f === 'online'  && !game.online)                 return false
-    // Genre
-    if (ALL_GENRES.includes(f) && !(game.genre || []).includes(f)) return false
-  }
-  return true
+const ROWS = [
+  { id:'destaque',  title:'Em Destaque',     filter: g => FEATURED.some(t => g.title.includes(t.split(':')[0].trim())) },
+  { id:'dl',        title:'Com Download',    filter: g => !!g.dl },
+  { id:'xbla',      title:'Xbox Live Arcade',filter: g => g.type === 'arcade' },
+  { id:'kinect',    title:'Kinect',          filter: g => g.type === 'kinect' },
+  { id:'fps',       title:'FPS',             filter: g => (g.genre||[]).includes('FPS') },
+  { id:'acao',      title:'Ação & Aventura', filter: g => (g.genre||[]).includes('Ação') && !(g.genre||[]).includes('FPS') },
+  { id:'rpg',       title:'RPG',             filter: g => (g.genre||[]).includes('RPG') },
+  { id:'terror',    title:'Terror',          filter: g => (g.genre||[]).includes('Terror') },
+  { id:'corrida',   title:'Corrida',         filter: g => (g.genre||[]).includes('Corrida') },
+  { id:'esportes',  title:'Esportes',        filter: g => (g.genre||[]).includes('Esportes') },
+  { id:'luta',      title:'Luta',            filter: g => (g.genre||[]).includes('Luta') && !(g.genre||[]).includes('Esportes') },
+  { id:'musica',    title:'Música & Ritmo',  filter: g => (g.genre||[]).includes('Música') },
+  { id:'estrategia',title:'Estratégia',      filter: g => (g.genre||[]).includes('Estratégia') },
+  { id:'puzzle',    title:'Puzzle',          filter: g => (g.genre||[]).includes('Puzzle') },
+  { id:'familia',   title:'Família',         filter: g => (g.genre||[]).includes('Família') },
+  { id:'ano05',     title:'2005 – 2007',     filter: g => g.year >= 2005 && g.year <= 2007 },
+  { id:'ano08',     title:'2008 – 2010',     filter: g => g.year >= 2008 && g.year <= 2010 },
+  { id:'ano11',     title:'2011 – 2013',     filter: g => g.year >= 2011 && g.year <= 2013 },
+  { id:'ano14',     title:'2014+',           filter: g => g.year >= 2014 },
+]
+
+// ─── Row scroll strip ─────────────────────────────────────────────────────────
+function RowStrip({ games, statuses, onStatusChange, onOpen }) {
+  const ref = useDragScroll()
+  const shown = games.slice(0, 40)
+  return (
+    <div ref={ref} className="flex gap-2.5 overflow-x-auto px-4 pb-3 pt-1 scrollbar-none select-none" style={{ cursor: 'grab' }}>
+      {shown.map(g => (
+        <GameCard key={g.id} game={g} consoleId={CONSOLE_ID} status={statuses[g.id] || {}} onStatusChange={onStatusChange} onClick={g2 => onOpen(shown, g2)} />
+      ))}
+    </div>
+  )
 }
 
-// Group games into rows by genre (Netflix-style)
-function buildRows(games) {
-  const genreMap = new Map()
-  for (const g of games) {
-    for (const genre of (g.genre?.length ? g.genre : ['Outros'])) {
-      if (!genreMap.has(genre)) genreMap.set(genre, [])
-      genreMap.get(genre).push(g)
-    }
-  }
-  return [...genreMap.entries()]
-    .sort((a, b) => b[1].length - a[1].length)
-    .map(([label, games]) => ({ label, games }))
-}
-
-export default function Xbox360() {
-  const { user }  = useAuth()
-  const [statuses, setStatuses]     = useState({})
-  const [loading, setLoading]       = useState(true)
-  const [search, setSearch]         = useState('')
-  const [activeFilters, setActive]  = useState(new Set())
-  const [selectedGame, setSelected] = useState(null)
-  const [showGenreMenu, setGenreMenu] = useState(false)
-
-  useEffect(() => {
-    if (!user) { setLoading(false); return }
-    getMyStatuses('xbox360')
-      .then(s => setStatuses(s))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [user])
-
-  const filteredGames = useMemo(() => {
-    const q = search.toLowerCase()
-    return XBOX360_GAMES.filter(g =>
-      (!q || g.title.toLowerCase().includes(q)) &&
-      matchesFilter(g, activeFilters, statuses)
-    )
-  }, [search, activeFilters, statuses])
-
-  const rows = useMemo(() => buildRows(filteredGames), [filteredGames])
-
-  const toggleFilter = id => {
-    setActive(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
-
-  const handleStatusChange = useCallback((gameId, key, value) => {
-    setStatuses(prev => ({
-      ...prev,
-      [gameId]: { ...(prev[gameId] || {}), [key]: value }
-    }))
-  }, [])
-
-  const isSearch = search.length > 0 || activeFilters.size > 0
+// ─── Collection mini-card ─────────────────────────────────────────────────────
+function MiniCard({ game, console: console_, status, onClick }) {
+  const cover  = coverSrc(game, console_)
+  const border =
+    status.cem_porcento ? 'border-yellow-500' :
+    status.zerado       ? 'border-blue-600'   :
+    status.joguei       ? 'border-[#107C10]'  :
+    status.quero        ? 'border-purple-600' : 'border-transparent'
 
   return (
-    <div className="min-h-screen bg-surface-1">
+    <div className="flex-shrink-0 cursor-pointer group" onClick={() => onClick(game)}>
+      <div className={`relative w-[70px] h-[100px] rounded-md bg-[#1a1a1a] border-2 overflow-hidden ${border}
+        transition-transform duration-150 group-hover:-translate-y-0.5`}>
+        <span className="absolute inset-0 flex items-center justify-center p-1 text-[8px] text-gray-600 text-center leading-tight z-0">
+          {game.title}
+        </span>
+        {cover && (
+          <img src={cover} alt="" loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover z-10"
+            style={{ objectPosition: 'right center' }}
+            onError={e => { e.target.style.display = 'none' }} />
+        )}
+      </div>
+      <p className="mt-1 text-[9px] text-gray-500 text-center w-[70px] truncate">{game.title}</p>
+    </div>
+  )
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+export default function Xbox360() {
+  const {
+    console: console_,
+    statuses, loading,
+    search, setSearch,
+    inc, exc, toggleInc, toggleExc, clearAll,
+    isGrid, filteredGames, collectionGames, stats,
+    handleStatusChange,
+    openGame, closeGame, goPrev, goNext,
+    selected, selectedIndex, selectedList,
+  } = useConsolePage(CONSOLE_ID)
+
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const collRef = useDragScroll()
+
+  return (
+    <div className="min-h-screen bg-[#0f0f0f]">
       <Nav />
 
-      {/* Header */}
-      <div className="sticky top-[57px] z-40 bg-surface-1/95 backdrop-blur border-b border-surface-4 px-4 py-3 space-y-3">
-        {/* Search + back */}
-        <div className="flex items-center gap-3">
-          <Link to="/home" className="text-gray-500 hover:text-white transition-colors text-lg leading-none">←</Link>
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar jogo..."
-              className="w-full bg-surface-2 border border-surface-4 rounded-full px-4 py-2 text-sm font-medium outline-none focus:border-xbox transition-colors placeholder-gray-600"
-            />
-            {search && (
-              <button onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">✕</button>
-            )}
-          </div>
-          <div className="text-xs text-gray-600 font-medium whitespace-nowrap">
-            {filteredGames.length.toLocaleString()} jogos
+      <Sidebar
+        special={console_.specialFilters}
+        groups={console_.filterGroups}
+        accentColor={console_.accentColor}
+        inc={inc} exc={exc}
+        onInc={toggleInc} onExc={toggleExc}
+        onClearAll={clearAll}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <div className="md:ml-[200px]">
+
+        {/* Sticky sub-header */}
+        <div className="sticky top-[57px] z-30 bg-[#0f0f0f]/95 backdrop-blur border-b border-[#1e1e1e] px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg bg-[#1e1e1e] border border-[#2a2a2a] text-gray-400 hover:text-white transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
+
+            <div className="hidden md:flex items-center gap-2 flex-shrink-0 text-[#107C10] font-black text-[15px] tracking-tight">
+              <svg viewBox="0 0 32 32" width="26" height="26" fill="none">
+                <circle cx="16" cy="16" r="15" fill="#107C10"/>
+                <path d="M8 10L13 16L8 22M16 8L22 16L16 24M24 10L19 16L24 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Xbox 360
+            </div>
+
+            <div className="relative flex-1">
+              <input
+                type="search"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Buscar jogos..."
+                autoComplete="off"
+                spellCheck={false}
+                className="w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-full px-4 py-2.5 text-[14px] font-medium outline-none focus:border-[#107C10] transition-colors placeholder-gray-600 text-white"
+              />
+              {search && (
+                <button onClick={() => setSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white text-lg leading-none">
+                  ×
+                </button>
+              )}
+            </div>
+
+            <span className="text-[11px] text-gray-600 font-semibold flex-shrink-0 whitespace-nowrap">
+              {filteredGames.length.toLocaleString('pt-BR')} jogos
+            </span>
           </div>
         </div>
 
-        {/* Filter chips */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
-          {STATUS_FILTERS.map(f => (
-            <FilterChip key={f.id} label={f.label} active={activeFilters.has(f.id)} onClick={() => toggleFilter(f.id)} />
-          ))}
-          <div className="w-px bg-surface-4 flex-shrink-0" />
-          {TYPE_FILTERS.map(f => (
-            <FilterChip key={f.id} label={f.label} active={activeFilters.has(f.id)} onClick={() => toggleFilter(f.id)} />
-          ))}
-          <div className="w-px bg-surface-4 flex-shrink-0" />
-          {SPECIAL_FILTERS.map(f => (
-            <FilterChip key={f.id} label={f.label} active={activeFilters.has(f.id)} onClick={() => toggleFilter(f.id)} />
-          ))}
-          <div className="w-px bg-surface-4 flex-shrink-0" />
-          {/* Genre picker */}
-          <div className="relative">
-            <FilterChip label="Gênero ▾" active={showGenreMenu} onClick={() => setGenreMenu(v => !v)} />
-            {showGenreMenu && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-surface-2 border border-surface-4 rounded-xl p-3 w-64 max-h-72 overflow-y-auto shadow-xl grid grid-cols-2 gap-1">
-                {ALL_GENRES.map(g => (
-                  <button key={g} onClick={() => { toggleFilter(g); setGenreMenu(false) }}
-                    className={`text-left text-xs px-2 py-1.5 rounded-lg transition-colors font-medium
-                      ${activeFilters.has(g) ? 'bg-xbox text-white' : 'text-gray-400 hover:text-white hover:bg-surface-3'}`}>
-                    {g}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <main className="pb-20">
-        {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <div className="w-6 h-6 border-2 border-xbox border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : filteredGames.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-gray-500">
-            <p className="font-bold">Nenhum jogo encontrado</p>
-            <button onClick={() => { setSearch(''); setActive(new Set()) }}
-              className="mt-2 text-xs text-xbox hover:text-xbox-light">Limpar filtros</button>
-          </div>
-        ) : (
-          <div className="space-y-8 pt-6">
-            {rows.map(row => (
-              <section key={row.label}>
-                <div className="flex items-center gap-3 px-4 mb-3">
-                  <h3 className="text-base font-black tracking-tight border-l-[3px] border-xbox pl-3">{row.label}</h3>
-                  <span className="text-xs text-gray-600">{row.games.length}</span>
-                </div>
-                <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-none">
-                  {row.games.map(game => (
-                    <GameCard
-                      key={game.id}
-                      game={game}
-                      status={statuses[game.id] || {}}
-                      onStatusChange={handleStatusChange}
-                      onClick={setSelected}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
+        {/* Collection strip */}
+        {collectionGames.length > 0 && (
+          <div className="px-4 pt-4 pb-0">
+            <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-600 mb-2 px-1">Minha Coleção</p>
+            <div ref={collRef} className="flex gap-2 overflow-x-auto pb-2 scrollbar-none select-none" style={{ cursor: 'grab' }}>
+              {collectionGames.map(g => (
+                <MiniCard key={g.id} game={g} console={console_} status={statuses[g.id] || {}} onClick={g2 => openGame(collectionGames, g2)} />
+              ))}
+            </div>
           </div>
         )}
-      </main>
 
-      {/* Modal */}
-      {selectedGame && (
+        {/* Content */}
+        <main className="pb-16">
+          {loading ? (
+            <div className="flex items-center justify-center h-40">
+              <div className="w-6 h-6 border-2 border-[#107C10] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : filteredGames.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 gap-2 text-gray-600">
+              <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <span className="font-bold text-sm">Nenhum jogo encontrado</span>
+              <button onClick={() => { setSearch(''); clearAll() }} className="text-xs text-[#107C10] hover:text-[#15a015] transition-colors">
+                Limpar filtros
+              </button>
+            </div>
+          ) : isGrid ? (
+            <div className="grid gap-2.5 p-4 pt-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))' }}>
+              {filteredGames.map(g => (
+                <GameCard key={g.id} game={g} consoleId={CONSOLE_ID} status={statuses[g.id] || {}} onStatusChange={handleStatusChange} onClick={g2 => openGame(filteredGames, g2)} gridMode />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-6 pt-4">
+              {(() => {
+                const shown = new Set()
+                return ROWS.map(row => {
+                  const games = console_.games.filter(row.filter).filter(g => {
+                    if (shown.has(g.id)) return false
+                    shown.add(g.id)
+                    return true
+                  })
+                  if (!games.length) return null
+                  return (
+                    <section key={row.id}>
+                      <div className="flex items-center gap-3 px-4 mb-2">
+                        <h3 className="text-[18px] font-black tracking-tight border-l-[3px] border-[#107C10] pl-2.5 leading-none">{row.title}</h3>
+                        <span className="text-[11px] text-gray-600 bg-[#1e1e1e] border border-[#2a2a2a] rounded-full px-2.5 py-0.5 font-semibold">{games.length}</span>
+                      </div>
+                      <RowStrip games={games} statuses={statuses} onStatusChange={handleStatusChange} onOpen={openGame} />
+                    </section>
+                  )
+                })
+              })()}
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Stats bar */}
+      <div className="fixed bottom-0 left-0 right-0 md:left-[200px] bg-[#111] border-t-2 border-[#107C10] px-4 py-2.5 flex items-center gap-3 overflow-x-auto scrollbar-none z-20">
+        <Stat color="bg-[#107C10]" label={`${stats.joguei} joguei`} />
+        <Stat color="bg-blue-700"   label={`${stats.zerado} zerado`} />
+        <Stat color="bg-yellow-500" label={`${stats.cem_porcento} 100%`} />
+        <Stat color="bg-purple-700" label={`${stats.quero} quero`} />
+        <Stat color="bg-[#e65100]"  label={`${stats.dl} download`} />
+        <span className="ml-auto flex-shrink-0 text-[12px] font-semibold text-gray-500">
+          {console_.games.length.toLocaleString('pt-BR')} jogos
+        </span>
+      </div>
+
+      {selected && (
         <GameModal
-          game={selectedGame}
-          status={statuses[selectedGame.id] || {}}
+          game={selected}
+          consoleId={CONSOLE_ID}
+          status={statuses[selected.id] || {}}
           onStatusChange={handleStatusChange}
-          onClose={() => setSelected(null)}
+          onClose={closeGame}
+          onPrev={selectedIndex > 0 ? goPrev : null}
+          onNext={selectedList && selectedIndex < selectedList.length - 1 ? goNext : null}
         />
       )}
+    </div>
+  )
+}
+
+function Stat({ color, label }) {
+  return (
+    <div className="flex items-center gap-1.5 flex-shrink-0">
+      <div className={`w-2 h-2 rounded-full ${color}`} />
+      <span className="text-[12px] font-semibold text-gray-500">{label}</span>
     </div>
   )
 }

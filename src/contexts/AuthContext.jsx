@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { getProfile } from '../lib/db'
+import { getProfile, setMockMode } from '../lib/db'
 
 const AuthContext = createContext(null)
 
@@ -32,10 +32,24 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signOut = () => supabase.auth.signOut()
+  const signOut = () => {
+    if (user?.id === 'mock-user') {
+      setMockMode(false)
+      setUser(null)
+      setProfile(null)
+      return
+    }
+    supabase.auth.signOut()
+  }
+
+  const mockLogin = () => {
+    setMockMode(true)
+    setUser({ id: 'mock-user', email: 'bruno@teste.com' })
+    setProfile({ id: 'mock-user', username: 'BrunoTeste', display_name: 'Bruno (Teste)' })
+  }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signOut, mockLogin }}>
       {children}
     </AuthContext.Provider>
   )
