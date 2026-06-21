@@ -12,8 +12,10 @@ create table if not exists public.profiles (
 );
 
 -- ── Game statuses ────────────────────────────────────────────
+-- user_id defaults to auth.uid() since setFlag()/setRating() in db.js upsert
+-- without ever passing it explicitly (clients only know their own row).
 create table if not exists public.game_statuses (
-  user_id       uuid not null references public.profiles(id) on delete cascade,
+  user_id       uuid not null default auth.uid() references public.profiles(id) on delete cascade,
   console       text not null,
   game_id       integer not null,
   joguei        boolean default false,
@@ -24,10 +26,12 @@ create table if not exists public.game_statuses (
   primary key (user_id, console, game_id)
 );
 
+alter table public.game_statuses alter column user_id set default auth.uid();
+
 -- ── Activities ───────────────────────────────────────────────
 create table if not exists public.activities (
   id          uuid primary key default gen_random_uuid(),
-  user_id     uuid not null references public.profiles(id) on delete cascade,
+  user_id     uuid not null default auth.uid() references public.profiles(id) on delete cascade,
   console     text not null,
   game_id     integer not null,
   action      text not null,
@@ -35,6 +39,8 @@ create table if not exists public.activities (
   new_value   text,
   created_at  timestamptz default now()
 );
+
+alter table public.activities alter column user_id set default auth.uid();
 
 -- ── Friendships ──────────────────────────────────────────────
 create table if not exists public.friendships (
