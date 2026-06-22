@@ -1,0 +1,1020 @@
+{
+  "total_games": 1789,
+  "covers_converted": 1649,
+  "convert_errors": [],
+  "covers_removed_no_match": 263,
+  "missing": [
+    {
+      "id": 117,
+      "title": "Baldur's Gate II: Enhanced Edition"
+    },
+    {
+      "id": 119,
+      "title": "Baldur's Gate: Enhanced Edition"
+    },
+    {
+      "id": 125,
+      "title": "Batman: Arkham Knight"
+    },
+    {
+      "id": 186,
+      "title": "Bombing Bastards"
+    },
+    {
+      "id": 190,
+      "title": "Borderlands Game of the Year Enhanced"
+    },
+    {
+      "id": 344,
+      "title": "Deltarune (itch)"
+    },
+    {
+      "id": 358,
+      "title": "Devil May Cry 3: Dante's Awakening Special Edition"
+    },
+    {
+      "id": 428,
+      "title": "DYNASTY WARRIORS 9"
+    },
+    {
+      "id": 480,
+      "title": "FIFA 14"
+    },
+    {
+      "id": 507,
+      "title": "Football Manager 2019"
+    },
+    {
+      "id": 509,
+      "title": "Football Manager 2022"
+    },
+    {
+      "id": 511,
+      "title": "Football Manager Touch 2018"
+    },
+    {
+      "id": 518,
+      "title": "Fortnite Battle Royale"
+    },
+    {
+      "id": 519,
+      "title": "Fortnite: Save The World"
+    },
+    {
+      "id": 533,
+      "title": "Galaxy of Pen & Paper"
+    },
+    {
+      "id": 563,
+      "title": "Grand Theft Auto III: The Definitive Edition"
+    },
+    {
+      "id": 564,
+      "title": "Grand Theft Auto: San Andreas – The Definitive Edition"
+    },
+    {
+      "id": 567,
+      "title": "Grandia II Anniversary Edition"
+    },
+    {
+      "id": 644,
+      "title": "Ice Climber"
+    },
+    {
+      "id": 844,
+      "title": "Minecraft: Story Mode"
+    },
+    {
+      "id": 913,
+      "title": "NBA Playgrounds"
+    },
+    {
+      "id": 939,
+      "title": "Ni no Kuni II: Revenant Kingdom"
+    },
+    {
+      "id": 954,
+      "title": "Ninja Gaiden II"
+    },
+    {
+      "id": 1024,
+      "title": "Pandemic: The Board Game"
+    },
+    {
+      "id": 1057,
+      "title": "Pikmin"
+    },
+    {
+      "id": 1082,
+      "title": "Pokémon Snap"
+    },
+    {
+      "id": 1108,
+      "title": "Quantum League"
+    },
+    {
+      "id": 1217,
+      "title": "Sea of Solitude"
+    },
+    {
+      "id": 1243,
+      "title": "She Sees Red"
+    },
+    {
+      "id": 1253,
+      "title": "Shovel Knight"
+    },
+    {
+      "id": 1334,
+      "title": "Star Wars Outlaws"
+    },
+    {
+      "id": 1423,
+      "title": "Tails Noir"
+    },
+    {
+      "id": 1474,
+      "title": "The Elder Scrolls: Legends"
+    },
+    {
+      "id": 1506,
+      "title": "The Last Blade (1997)"
+    },
+    {
+      "id": 1513,
+      "title": "The Legend of Zelda"
+    },
+    {
+      "id": 1519,
+      "title": "The Legend of Zelda: Ocarina of Time"
+    },
+    {
+      "id": 1552,
+      "title": "The Silver Case"
+    },
+    {
+      "id": 1647,
+      "title": "TWINKLE STAR SPRITES"
+    },
+    {
+      "id": 1669,
+      "title": "Unravel"
+    },
+    {
+      "id": 2,
+      "title": "007 First Light"
+    },
+    {
+      "id": 63,
+      "title": "Ancestors"
+    },
+    {
+      "id": 88,
+      "title": "Assassin's Creed Freedom Cry"
+    },
+    {
+      "id": 90,
+      "title": "Assassin's Creed Odyssey"
+    },
+    {
+      "id": 91,
+      "title": "Assassin’s Creed IV: Black Flag"
+    },
+    {
+      "id": 92,
+      "title": "Assassin’s Creed Liberation HD"
+    },
+    {
+      "id": 93,
+      "title": "Assassin’s Creed Rogue"
+    },
+    {
+      "id": 96,
+      "title": "Asterix & Obelix XXL 2 - Mission Las Vegum"
+    },
+    {
+      "id": 120,
+      "title": "Banjo-Kazooie"
+    },
+    {
+      "id": 123,
+      "title": "Batman: Arkham Asylum"
+    },
+    {
+      "id": 209,
+      "title": "Bulletstorm: Full Clip Edition"
+    },
+    {
+      "id": 214,
+      "title": "Cadence of Hyrule"
+    },
+    {
+      "id": 238,
+      "title": "Catan Universe"
+    },
+    {
+      "id": 306,
+      "title": "Cuphead: The Delicious Last Course"
+    },
+    {
+      "id": 310,
+      "title": "Cyberpunk 2077"
+    },
+    {
+      "id": 312,
+      "title": "Dandara"
+    },
+    {
+      "id": 370,
+      "title": "DISGAEA 5: ALLIANCE OF VENGEANCE"
+    },
+    {
+      "id": 385,
+      "title": "Donkey Kong"
+    },
+    {
+      "id": 391,
+      "title": "DOOM (25th anniversary)"
+    },
+    {
+      "id": 397,
+      "title": "DOOM II (25th anniversary)"
+    },
+    {
+      "id": 407,
+      "title": "Dragon Ball Z: Kakarot"
+    },
+    {
+      "id": 432,
+      "title": "EARTHLOCK: Festival of Magic"
+    },
+    {
+      "id": 456,
+      "title": "Everspace 2"
+    },
+    {
+      "id": 458,
+      "title": "Evil Dead: The Game"
+    },
+    {
+      "id": 460,
+      "title": "Excitebike"
+    },
+    {
+      "id": 501,
+      "title": "Flashback: The Quest for Identity"
+    },
+    {
+      "id": 524,
+      "title": "Frederic: Evil Strikes Back"
+    },
+    {
+      "id": 527,
+      "title": "Friday the 13th: Killer Puzzle"
+    },
+    {
+      "id": 529,
+      "title": "Frostpunk"
+    },
+    {
+      "id": 532,
+      "title": "Fuser"
+    },
+    {
+      "id": 541,
+      "title": "Genkai Tokki: Moero Chronicle"
+    },
+    {
+      "id": 542,
+      "title": "Genshin Impact"
+    },
+    {
+      "id": 568,
+      "title": "Graven"
+    },
+    {
+      "id": 575,
+      "title": "GRIP: Combat Racing"
+    },
+    {
+      "id": 628,
+      "title": "Hotline Miami 2: Wrong Number"
+    },
+    {
+      "id": 631,
+      "title": "Hover: Revolt Of Gamers"
+    },
+    {
+      "id": 645,
+      "title": "Icewind Dale: Enhanced Edition"
+    },
+    {
+      "id": 699,
+      "title": "Keen Dreams"
+    },
+    {
+      "id": 729,
+      "title": "Lacuna – A Sci-Fi Noir Adventure"
+    },
+    {
+      "id": 757,
+      "title": "Life Goes On: Done to Death"
+    },
+    {
+      "id": 759,
+      "title": "Life is Strange Remastered"
+    },
+    {
+      "id": 760,
+      "title": "Life is Strange: Before the Storm Remastered"
+    },
+    {
+      "id": 763,
+      "title": "Lifeless Planet Premier Edition"
+    },
+    {
+      "id": 765,
+      "title": "Little Devil Inside"
+    },
+    {
+      "id": 829,
+      "title": "METAL SLUG"
+    },
+    {
+      "id": 830,
+      "title": "METAL SLUG 2"
+    },
+    {
+      "id": 865,
+      "title": "Monument Valley: Panoramic Edition"
+    },
+    {
+      "id": 880,
+      "title": "MudRunner"
+    },
+    {
+      "id": 897,
+      "title": "MОUSE"
+    },
+    {
+      "id": 914,
+      "title": "Necrobarista"
+    },
+    {
+      "id": 918,
+      "title": "Neighbours from Hell Compilation"
+    },
+    {
+      "id": 944,
+      "title": "NieR:Automata"
+    },
+    {
+      "id": 949,
+      "title": "Nightmares from the Deep 2: The Siren`s Call"
+    },
+    {
+      "id": 953,
+      "title": "Ninja Gaiden 3"
+    },
+    {
+      "id": 973,
+      "title": "Odallus: The Dark Call"
+    },
+    {
+      "id": 995,
+      "title": "Oniken: Unstoppable Edition"
+    },
+    {
+      "id": 1003,
+      "title": "Out There: Omega Edition"
+    },
+    {
+      "id": 1005,
+      "title": "Outer Wilds - Echoes of the Eye"
+    },
+    {
+      "id": 1008,
+      "title": "Outlast: Whistleblower"
+    },
+    {
+      "id": 1051,
+      "title": "Phantasy Star Online 2"
+    },
+    {
+      "id": 1052,
+      "title": "Phantom Brave PC"
+    },
+    {
+      "id": 1061,
+      "title": "Pillars of Eternity II: Deadfire"
+    },
+    {
+      "id": 1105,
+      "title": "Puzzle Quest: Challenge of the Warlords"
+    },
+    {
+      "id": 1125,
+      "title": "Reanimal"
+    },
+    {
+      "id": 1134,
+      "title": "Redout: Lightspeed Edition"
+    },
+    {
+      "id": 1144,
+      "title": "Resident Evil 0 / Biohazard 0 HD REMASTER"
+    },
+    {
+      "id": 1174,
+      "title": "RIVE: Wreck, Hack, Die, Retry!"
+    },
+    {
+      "id": 1216,
+      "title": "Scribblenauts Unmasked: A DC Comics Adventure"
+    },
+    {
+      "id": 1223,
+      "title": "SEGA Mega Drive and Genesis Classics"
+    },
+    {
+      "id": 1224,
+      "title": "SENGOKU Anthology"
+    },
+    {
+      "id": 1226,
+      "title": "Serious Sam HD:  The First Encounter"
+    },
+    {
+      "id": 1227,
+      "title": "Serious Sam HD: The Second Encounter"
+    },
+    {
+      "id": 1228,
+      "title": "Serious Sam: The First Encounter"
+    },
+    {
+      "id": 1314,
+      "title": "Spellbreak"
+    },
+    {
+      "id": 1326,
+      "title": "Spy Chameleon - RGB Agent"
+    },
+    {
+      "id": 1349,
+      "title": "Stela"
+    },
+    {
+      "id": 1380,
+      "title": "Super Castlevania IV"
+    },
+    {
+      "id": 1386,
+      "title": "Super Mario 3D World"
+    },
+    {
+      "id": 1393,
+      "title": "Super Mario Bros.: The Lost Levels"
+    },
+    {
+      "id": 1426,
+      "title": "Tales from the Borderlands: A Telltale Game Series"
+    },
+    {
+      "id": 1446,
+      "title": "The 25th Ward: The Silver Case"
+    },
+    {
+      "id": 1470,
+      "title": "The Darkest Tales — Into the Nightmare"
+    },
+    {
+      "id": 1490,
+      "title": "The House in Fata Morgana"
+    },
+    {
+      "id": 1514,
+      "title": "The Legend of Zelda: A Link to the Past"
+    },
+    {
+      "id": 1518,
+      "title": "The Legend of Zelda: Majora's Mask"
+    },
+    {
+      "id": 1525,
+      "title": "The Life and Suffering of Sir Brante"
+    },
+    {
+      "id": 1560,
+      "title": "The Swords of Ditto"
+    },
+    {
+      "id": 1565,
+      "title": "The Turing Test"
+    },
+    {
+      "id": 1566,
+      "title": "The Vagrant"
+    },
+    {
+      "id": 1590,
+      "title": "Those Who Remain"
+    },
+    {
+      "id": 1621,
+      "title": "TowerFall Ascension"
+    },
+    {
+      "id": 1635,
+      "title": "Troubleshooter"
+    },
+    {
+      "id": 1637,
+      "title": "Trüberbrook – A Nerd Saves the World"
+    },
+    {
+      "id": 1638,
+      "title": "TT Isle of Man"
+    },
+    {
+      "id": 1646,
+      "title": "Turok: Dinosaur Hunter"
+    },
+    {
+      "id": 1661,
+      "title": "Underworld Ascendant"
+    },
+    {
+      "id": 1760,
+      "title": "XIII - Remake"
+    },
+    {
+      "id": 1088,
+      "title": "Portal"
+    },
+    {
+      "id": 1389,
+      "title": "Super Mario Bros."
+    },
+    {
+      "id": 1390,
+      "title": "Super Mario Bros. 2"
+    },
+    {
+      "id": 1391,
+      "title": "Super Mario Bros. 3"
+    }
+  ],
+  "missing_count": 140,
+  "match_threshold": 0.88,
+  "covers_recovered_from_gametdb_secondary": 6,
+  "manually_reverted_false_positives": [
+    {
+      "id": 1088,
+      "title": "Portal",
+      "reason": "matched SPORTAL, unrelated shovelware title, not Valve Portal"
+    },
+    {
+      "id": 1389,
+      "title": "Super Mario Bros.",
+      "reason": "matched Super Mario Bros. 35, a different battle-royale spinoff"
+    },
+    {
+      "id": 1390,
+      "title": "Super Mario Bros. 2",
+      "reason": "matched Super Mario Bros. 35, a different battle-royale spinoff"
+    },
+    {
+      "id": 1391,
+      "title": "Super Mario Bros. 3",
+      "reason": "matched Super Mario Bros. 35, a different battle-royale spinoff"
+    }
+  ],
+  "manually_reviewed_identity_matches": [
+    {
+      "id": 1693,
+      "title": "Velocity 2X",
+      "matched_code": "ANB6B"
+    },
+    {
+      "id": 967,
+      "title": "Observеr",
+      "matched_code": "ARVVA"
+    },
+    {
+      "id": 1154,
+      "title": "Resident Evil: Village",
+      "matched_code": "A9H4A"
+    },
+    {
+      "id": 1138,
+      "title": "Relic Hunters Zero",
+      "matched_code": "AXEKA"
+    },
+    {
+      "id": 1153,
+      "title": "Resident Evil Zero",
+      "matched_code": "AQ76B"
+    },
+    {
+      "id": 945,
+      "title": "NieR:Automata Game of the YoRHa Edition",
+      "matched_code": "A532A"
+    },
+    {
+      "id": 915,
+      "title": "Need For Speed: Hot Pursuit",
+      "matched_code": "AXVXA"
+    },
+    {
+      "id": 1084,
+      "title": "Pokémon: Let's Go, Pikachu! and Eevee!",
+      "matched_code": "ADW2A"
+    },
+    {
+      "id": 1074,
+      "title": "Plants vs. Zombies: Battle for Neighborville",
+      "matched_code": "AXB3A"
+    },
+    {
+      "id": 810,
+      "title": "Marvel's Guardians of the Galaxy",
+      "matched_code": "A47DA"
+    },
+    {
+      "id": 127,
+      "title": "Batman: The Enemy Within - Episode 1",
+      "matched_code": "APNCA"
+    },
+    {
+      "id": 124,
+      "title": "Batman: Arkham City",
+      "matched_code": "A6DQA"
+    },
+    {
+      "id": 537,
+      "title": "Garou: Mark of the Wolves",
+      "matched_code": "AB2PA"
+    },
+    {
+      "id": 1777,
+      "title": "Yu-Gi-Oh! Legacy of the Duelist",
+      "matched_code": "AS5FA"
+    },
+    {
+      "id": 1214,
+      "title": "Scott Pilgrim vs. The World: The Game – Complete Edition",
+      "matched_code": "AX4WA"
+    },
+    {
+      "id": 1071,
+      "title": "Planescape: Torment: Enhanced Edition",
+      "matched_code": "ARSGA"
+    },
+    {
+      "id": 431,
+      "title": "Eagle Island",
+      "matched_code": "AR6GA"
+    },
+    {
+      "id": 28,
+      "matched_code": "A4QRA"
+    },
+    {
+      "id": 29,
+      "matched_code": "A5FUA"
+    },
+    {
+      "id": 51,
+      "matched_code": "A87TB"
+    },
+    {
+      "id": 60,
+      "matched_code": "AR8VA"
+    },
+    {
+      "id": 75,
+      "matched_code": "AQ4HA"
+    },
+    {
+      "id": 201,
+      "matched_code": "A8YCA"
+    },
+    {
+      "id": 230,
+      "matched_code": "ASVGA"
+    },
+    {
+      "id": 253,
+      "matched_code": "APW9A"
+    },
+    {
+      "id": 304,
+      "matched_code": "AXX5A"
+    },
+    {
+      "id": 313,
+      "matched_code": "A3BCB"
+    },
+    {
+      "id": 317,
+      "matched_code": "ASFSA"
+    },
+    {
+      "id": 396,
+      "matched_code": "BG53A"
+    },
+    {
+      "id": 411,
+      "matched_code": "ALC7C"
+    },
+    {
+      "id": 425,
+      "matched_code": "AY2BA"
+    },
+    {
+      "id": 426,
+      "matched_code": "A38HA"
+    },
+    {
+      "id": 484,
+      "matched_code": "AXSHA"
+    },
+    {
+      "id": 636,
+      "matched_code": "AQGRA"
+    },
+    {
+      "id": 685,
+      "matched_code": "AV67C"
+    },
+    {
+      "id": 701,
+      "matched_code": "AF8ZA"
+    },
+    {
+      "id": 805,
+      "matched_code": "APDVA"
+    },
+    {
+      "id": 842,
+      "matched_code": "AZJ4A"
+    },
+    {
+      "id": 1020,
+      "matched_code": "A4TYA"
+    },
+    {
+      "id": 1059,
+      "matched_code": "AMPNA"
+    },
+    {
+      "id": 1078,
+      "matched_code": "A45RA"
+    },
+    {
+      "id": 1121,
+      "matched_code": "ACVKA"
+    },
+    {
+      "id": 1182,
+      "matched_code": "ADMMC"
+    },
+    {
+      "id": 1278,
+      "matched_code": "BHEUA"
+    },
+    {
+      "id": 1422,
+      "matched_code": "ASNXA"
+    },
+    {
+      "id": 1483,
+      "matched_code": "A5GRA"
+    },
+    {
+      "id": 1564,
+      "matched_code": "APENA"
+    },
+    {
+      "id": 1572,
+      "matched_code": "APFDA"
+    },
+    {
+      "id": 1625,
+      "matched_code": "AUUNA"
+    },
+    {
+      "id": 1786,
+      "matched_code": "ATMEA"
+    },
+    {
+      "id": 79,
+      "matched_code": "A6NGA"
+    },
+    {
+      "id": 154,
+      "matched_code": "AWH2A"
+    },
+    {
+      "id": 156,
+      "matched_code": "AWH3A"
+    },
+    {
+      "id": 177,
+      "matched_code": "A3V8A"
+    },
+    {
+      "id": 189,
+      "matched_code": "AYKNA"
+    },
+    {
+      "id": 202,
+      "matched_code": "AQNCA"
+    },
+    {
+      "id": 233,
+      "matched_code": "ATA9B"
+    },
+    {
+      "id": 249,
+      "matched_code": "BJ8XA"
+    },
+    {
+      "id": 324,
+      "matched_code": "AZT4A"
+    },
+    {
+      "id": 339,
+      "matched_code": "A5BVA"
+    },
+    {
+      "id": 361,
+      "matched_code": "AQ3FA"
+    },
+    {
+      "id": 378,
+      "matched_code": "ASNMA"
+    },
+    {
+      "id": 455,
+      "matched_code": "AMQ3A"
+    },
+    {
+      "id": 483,
+      "matched_code": "ASUPA"
+    },
+    {
+      "id": 485,
+      "matched_code": "A3LUA"
+    },
+    {
+      "id": 528,
+      "matched_code": "AR7BA"
+    },
+    {
+      "id": 548,
+      "matched_code": "AS26A"
+    },
+    {
+      "id": 562,
+      "matched_code": "BBY9A"
+    },
+    {
+      "id": 582,
+      "matched_code": "BCRGA"
+    },
+    {
+      "id": 612,
+      "matched_code": "AZ4BA"
+    },
+    {
+      "id": 616,
+      "matched_code": "APNFA"
+    },
+    {
+      "id": 627,
+      "matched_code": "AUGBA"
+    },
+    {
+      "id": 668,
+      "matched_code": "AD32A"
+    },
+    {
+      "id": 674,
+      "matched_code": "A4F8A"
+    },
+    {
+      "id": 687,
+      "matched_code": "AX3EA"
+    },
+    {
+      "id": 826,
+      "matched_code": "AEUWA"
+    },
+    {
+      "id": 843,
+      "matched_code": "AUZ4N"
+    },
+    {
+      "id": 872,
+      "matched_code": "BASFA"
+    },
+    {
+      "id": 930,
+      "matched_code": "A7CTA"
+    },
+    {
+      "id": 982,
+      "matched_code": "ARU4A"
+    },
+    {
+      "id": 990,
+      "matched_code": "BBZUA"
+    },
+    {
+      "id": 1077,
+      "matched_code": "AEABB"
+    },
+    {
+      "id": 1081,
+      "matched_code": "ZAAEA"
+    },
+    {
+      "id": 1083,
+      "matched_code": "ALZ21"
+    },
+    {
+      "id": 1114,
+      "matched_code": "ASK3A"
+    },
+    {
+      "id": 1133,
+      "matched_code": "ARX9B"
+    },
+    {
+      "id": 1150,
+      "matched_code": "AQ77B"
+    },
+    {
+      "id": 1168,
+      "matched_code": "APHCA"
+    },
+    {
+      "id": 1282,
+      "matched_code": "A3YNA"
+    },
+    {
+      "id": 1376,
+      "matched_code": "AQLUA"
+    },
+    {
+      "id": 1427,
+      "matched_code": "AL7WA"
+    },
+    {
+      "id": 1561,
+      "matched_code": "AS46A"
+    },
+    {
+      "id": 1588,
+      "matched_code": "AQ79A"
+    },
+    {
+      "id": 1594,
+      "matched_code": "A3ZPA"
+    },
+    {
+      "id": 1607,
+      "matched_code": "A32FA"
+    },
+    {
+      "id": 1654,
+      "matched_code": "ATTDA"
+    },
+    {
+      "id": 1655,
+      "matched_code": "A36KA"
+    },
+    {
+      "id": 1663,
+      "matched_code": "AM3MA"
+    },
+    {
+      "id": 1697,
+      "matched_code": "AJ9KA"
+    },
+    {
+      "id": 1748,
+      "matched_code": "AUULA"
+    },
+    {
+      "id": 1753,
+      "matched_code": "AWCVA"
+    },
+    {
+      "id": 1778,
+      "matched_code": "AX48A"
+    }
+  ]
+}

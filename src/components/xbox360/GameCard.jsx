@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { getConsole } from '../../consoles/registry'
 import { coverSrc, dlLink, typeBadge, accentRgba, accentLight, metacriticCls } from '../../consoles/dl'
 import { setFlag } from '../../lib/db'
-import { createFeedPost, checkAndUnlockAchievements, SHAREABLE } from '../../lib/social'
+import { checkAndUnlockAchievements, SHAREABLE } from '../../lib/social'
 import { useAuth } from '../../contexts/AuthContext'
+import { useLibraryAddBatch } from '../../contexts/LibraryAddBatchContext'
 
 // 'joguei' uses the console's accent color (set via inline style) instead of a fixed class.
 const STATUS_PILLS = [
@@ -16,12 +17,9 @@ const STATUS_PILLS = [
 export default function GameCard({ game, status = {}, onStatusChange, onClick, gridMode = false, consoleId = 'xbox360' }) {
   const console_ = getConsole(consoleId)
   const { user }  = useAuth()
+  const { addToBatch } = useLibraryAddBatch()
   const [hovered, setHovered] = useState(false)
   const [saving,  setSaving]  = useState(null)
-  const [shareKey, setShareKey] = useState(null)
-  const shareTimeoutRef = useRef(null)
-
-  useEffect(() => () => clearTimeout(shareTimeoutRef.current), [])
 
   const cover    = coverSrc(game, console_)
   const dl       = dlLink(game.dl, console_.partIds)
@@ -30,8 +28,10 @@ export default function GameCard({ game, status = {}, onStatusChange, onClick, g
   const PROGRESS = ['quero', 'joguei', 'zerado', 'cem_porcento']
 
   // SNES box art is landscape (front+spine scan), unlike the portrait case art used by
-  // the other consoles — widen the card so more of the actual cover shows.
+  // the other consoles (NSW included, since its GameTDB box art is portrait) — widen the
+  // card so more of the actual image shows instead of cropping it into a portrait slot.
   const isSnes = consoleId === 'snes'
+  const isNsw  = consoleId === 'nsw'
   const cardWidthCls   = isSnes ? 'w-[190px]' : 'w-[130px]'
   const coverSizeCls   = isSnes ? 'w-[190px] h-[140px]' : 'w-[130px] h-[190px]'
   const coverAspectCls = isSnes ? 'aspect-[4/3]' : 'aspect-[2/3]'
@@ -55,26 +55,12 @@ export default function GameCard({ game, status = {}, onStatusChange, onClick, g
       onStatusChange?.(game.id, key, next)
       checkAndUnlockAchievements(user.id).catch(() => {})
 
-      // Default is always share=off — this just offers a brief, easy-to-ignore opt-in
-      // tap, never a pre-checked box, so backfilling old games never floods the feed.
       if (next && SHAREABLE.includes(key)) {
-        setShareKey(key)
-        clearTimeout(shareTimeoutRef.current)
-        shareTimeoutRef.current = setTimeout(() => setShareKey(null), 4000)
+        addToBatch(consoleId, game.id, key, status.rating ?? null)
       }
     } finally {
       setSaving(null)
     }
-  }
-
-  async function handleShare(e) {
-    e.stopPropagation()
-    if (!shareKey) return
-    clearTimeout(shareTimeoutRef.current)
-    setShareKey(null)
-    try {
-      await createFeedPost(consoleId, game.id, shareKey, status.rating ?? null)
-    } catch { /* sharing is best-effort, never block the core tracking flow */ }
   }
 
   return (
@@ -104,7 +90,7 @@ export default function GameCard({ game, status = {}, onStatusChange, onClick, g
             alt={game.title}
             loading="lazy"
             className="absolute inset-0 w-full h-full object-cover z-10"
-            style={{ objectPosition: consoleId === 'snes' ? 'left center' : 'right center' }}
+            style={{ objectPosition: isSnes ? 'left center' : isNsw ? 'center center' : 'right center' }}
             onError={e => { e.target.style.display = 'none' }}
           />
         )}
@@ -129,17 +115,6 @@ export default function GameCard({ game, status = {}, onStatusChange, onClick, g
           >
             <DlIcon size={gridMode ? 9 : 13} />
           </a>
-        )}
-
-        {/* Share-to-feed affordance — opt-in only, auto-dismisses, never nags */}
-        {shareKey && (
-          <button
-            onClick={handleShare}
-            title="Compartilhar no feed"
-            className="absolute bottom-1 right-1 z-30 w-[22px] h-[22px] rounded-sm bg-social flex items-center justify-center shadow-md"
-          >
-            <span className="text-[11px] font-black text-white leading-none">↗</span>
-          </button>
         )}
 
         {/* Hover overlay — pill buttons (click outside the pills bubbles up and opens the modal) */}

@@ -7,7 +7,73 @@ import { useAuth } from '../contexts/AuthContext'
 const EMAIL_DOMAIN = 'users.gametracker.app'
 const toAuthEmail = (nickname) => `${nickname.trim().toLowerCase()}@${EMAIL_DOMAIN}`
 
+// A curated pool of recognizable covers across every ready console, so the backdrop
+// is a different trio on each visit instead of one over-stretched single image.
+const BACKDROP_COVERS = [
+  // Xbox 360
+  '/covers/xbox360/4D5307E6.webp', // Halo 3
+  '/covers/xbox360/4D5307D5.webp', // Gears of War
+  '/covers/xbox360/4D5307E8.webp', // Mass Effect
+  '/covers/xbox360/545407D8.webp', // BioShock
+  '/covers/xbox360/425307E6.webp', // The Elder Scrolls V: Skyrim
+  '/covers/xbox360/425307D5.webp', // Fallout 3
+  '/covers/xbox360/5454082B.webp', // Red Dead Redemption
+  '/covers/xbox360/545407F2.webp', // Grand Theft Auto IV
+  '/covers/xbox360/415607E6.webp', // Call of Duty 4: Modern Warfare
+  '/covers/xbox360/4D5307EA.webp', // Forza Motorsport
+  // PS2
+  '/covers/ps2/60.webp',  // God of War
+  '/covers/ps2/51.webp',  // Final Fantasy X
+  '/covers/ps2/65.webp',  // Grand Theft Auto III
+  '/covers/ps2/67.webp',  // Grand Theft Auto: San Andreas
+  '/covers/ps2/68.webp',  // Grand Theft Auto: Vice City
+  '/covers/ps2/86.webp',  // Kingdom Hearts
+  '/covers/ps2/100.webp', // Metal Gear Solid 3: Snake Eater
+  '/covers/ps2/112.webp', // Okami
+  '/covers/ps2/125.webp', // Resident Evil 4
+  '/covers/ps2/138.webp', // Shadow of the Colossus
+  // PS3
+  '/covers/ps3/BLUS30377.webp', // Call of Duty: Modern Warfare 2
+  '/covers/ps3/BLUS30443.webp', // Demon's Souls
+  '/covers/ps3/BCUS98111.webp', // God of War III
+  '/covers/ps3/BLUS31156.webp', // Grand Theft Auto V
+  '/covers/ps3/NPUA70088.webp', // Heavy Rain
+  '/covers/ps3/BCUS98119.webp', // inFamous
+  '/covers/ps3/BLUS30109.webp', // Metal Gear Solid 4
+  '/covers/ps3/BLUS30418.webp', // Red Dead Redemption
+  '/covers/ps3/NPUA70257.webp', // The Last of Us
+  '/covers/ps3/BCUS98123.webp', // Uncharted 2: Among Thieves
+  // SNES
+  '/covers/snes/97.webp',  // Chrono Trigger
+  '/covers/snes/125.webp', // Donkey Kong Country
+  '/covers/snes/127.webp', // Donkey Kong Country 2
+  '/covers/snes/263.webp', // The Legend of Zelda: A Link to the Past
+  '/covers/snes/298.webp', // Mega Man X
+  '/covers/snes/488.webp', // Street Fighter II
+  '/covers/snes/523.webp', // Super Mario World
+  '/covers/snes/524.webp', // Super Mario World 2: Yoshi's Island
+]
+
+function pickRandomCovers(count) {
+  const pool = [...BACKDROP_COVERS]
+  const picked = []
+  for (let i = 0; i < count && pool.length; i++) {
+    const idx = Math.floor(Math.random() * pool.length)
+    picked.push(pool.splice(idx, 1)[0])
+  }
+  return picked
+}
+
+// Fades each panel into its neighbor so three covers read as one blended strip
+// instead of a hard-edged collage.
+const PANEL_MASKS = [
+  'linear-gradient(to right, black 0%, black 55%, transparent 100%)',
+  'linear-gradient(to right, transparent 0%, black 30%, black 70%, transparent 100%)',
+  'linear-gradient(to right, transparent 0%, black 45%, black 100%)',
+]
+
 export default function Login() {
+  const [backdropCovers] = useState(() => pickRandomCovers(3))
   const navigate    = useNavigate()
   const { mockLogin } = useAuth()
   const [tab, setTab]         = useState('entrar')   // 'entrar' | 'criar'
@@ -66,15 +132,38 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-1 flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-surface-1 relative flex flex-col items-center justify-center px-4 overflow-hidden">
+      {/* Backdrop: three desaturated covers blended into one strip, just ambiance, never the focal point */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 flex">
+          {backdropCovers.map((src, i) => (
+            <img
+              key={src}
+              src={src}
+              alt=""
+              aria-hidden="true"
+              className="flex-1 h-full object-cover grayscale opacity-40"
+              style={{ maskImage: PANEL_MASKS[i], WebkitMaskImage: PANEL_MASKS[i] }}
+            />
+          ))}
+        </div>
+        <div
+          className="absolute inset-0"
+          style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(10,14,26,0.55) 0%, rgba(10,14,26,0.97) 70%)' }}
+        />
+      </div>
+
       {/* Logo */}
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-black text-xbox tracking-tight">GAME TRACKER</h1>
-        <p className="text-gray-500 text-sm mt-2 font-medium">Seu histórico de jogos em todos os consoles</p>
+      <div className="relative z-10 mb-8 text-center motion-safe:animate-fade-up">
+        <img src="/jogalera-logo.svg" alt="JogaLera" className="h-16 w-auto mx-auto" />
+        <p className="text-gray-500 text-sm mt-3 font-medium">Seu histórico de jogos em todos os consoles</p>
       </div>
 
       {/* Card */}
-      <div className="w-full max-w-md bg-surface-2 rounded-2xl border border-surface-4 overflow-hidden">
+      <div
+        className="relative z-10 w-full max-w-md bg-surface-2 rounded-2xl border border-surface-4 overflow-hidden motion-safe:animate-fade-up"
+        style={{ animationDelay: '120ms' }}
+      >
         {/* Tabs */}
         <div className="flex border-b border-surface-4">
           {['entrar', 'criar'].map(t => (
@@ -83,7 +172,7 @@ export default function Login() {
               onClick={() => { setTab(t); setError('') }}
               className={`flex-1 py-4 text-sm font-bold transition-colors ${
                 tab === t
-                  ? 'text-xbox border-b-2 border-xbox bg-surface-3'
+                  ? 'text-social border-b-2 border-social bg-surface-3'
                   : 'text-gray-500 hover:text-gray-300'
               }`}
             >
@@ -107,7 +196,7 @@ export default function Login() {
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
                 placeholder="Bruno Milesi"
-                className="bg-surface-3 border border-surface-4 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-xbox transition-colors placeholder-gray-600"
+                className="bg-surface-3 border border-surface-4 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-social transition-colors placeholder-gray-600"
                 required
               />
             </div>
@@ -123,7 +212,7 @@ export default function Login() {
               onChange={e => setUsername(e.target.value)}
               placeholder="brunomilesi"
               autoCapitalize="none"
-              className="bg-surface-3 border border-surface-4 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-xbox transition-colors placeholder-gray-600"
+              className="bg-surface-3 border border-surface-4 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-social transition-colors placeholder-gray-600"
               required
             />
           </div>
@@ -137,7 +226,7 @@ export default function Login() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="bg-surface-3 border border-surface-4 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-xbox transition-colors placeholder-gray-600"
+              className="bg-surface-3 border border-surface-4 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-social transition-colors placeholder-gray-600"
               required
               minLength={6}
             />
@@ -153,7 +242,7 @@ export default function Login() {
                 value={invite}
                 onChange={e => setInvite(e.target.value.toUpperCase())}
                 placeholder="EX: A1B2C3D4"
-                className="bg-surface-3 border border-surface-4 rounded-xl px-4 py-3 text-sm font-mono font-bold tracking-widest outline-none focus:border-xbox transition-colors placeholder-gray-600"
+                className="bg-surface-3 border border-surface-4 rounded-xl px-4 py-3 text-sm font-mono font-bold tracking-widest outline-none focus:border-social transition-colors placeholder-gray-600"
                 required
               />
             </div>
@@ -168,19 +257,25 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 bg-xbox hover:bg-xbox-light disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-colors"
+            className="mt-2 bg-social hover:bg-social-dark disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-colors"
           >
             {loading ? 'Aguarde...' : tab === 'entrar' ? 'Entrar' : 'Criar conta'}
           </button>
         </form>
       </div>
 
-      <p className="mt-6 text-gray-600 text-xs">Precisa de um convite? Peça a um amigo.</p>
+      <p
+        className="relative z-10 mt-6 text-gray-600 text-xs motion-safe:animate-fade-up"
+        style={{ animationDelay: '200ms' }}
+      >
+        Precisa de um convite? Peça a um amigo.
+      </p>
 
       {import.meta.env.DEV && (
         <button
           onClick={() => { mockLogin(); navigate('/home') }}
-          className="mt-4 text-xs text-gray-600 hover:text-gray-400 underline underline-offset-2 transition-colors"
+          className="relative z-10 mt-4 text-xs text-gray-600 hover:text-gray-400 underline underline-offset-2 transition-colors motion-safe:animate-fade-up"
+          style={{ animationDelay: '200ms' }}
         >
           [DEV] Entrar como Bruno (sem Supabase)
         </button>

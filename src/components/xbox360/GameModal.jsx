@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { getConsole } from '../../consoles/registry'
 import { coverSrc, buildDlEntries, dlFileUrl, dlPageUrl, typeLabel, accentRgba, accentLight, metacriticCls } from '../../consoles/dl'
 import { setFlag, setRating } from '../../lib/db'
-import { createFeedPost, checkAndUnlockAchievements, SHAREABLE } from '../../lib/social'
+import { checkAndUnlockAchievements, SHAREABLE } from '../../lib/social'
 import { useAuth } from '../../contexts/AuthContext'
+import { useLibraryAddBatch } from '../../contexts/LibraryAddBatchContext'
 
 const YT_KEY = 'AIzaSyC0roJ2MgVzcd1PAnCDImt8BI9eruOdS-c'
 
@@ -42,6 +43,7 @@ function loadTrailerCache(console_) {
 export default function GameModal({ game, status = {}, onStatusChange, onClose, onPrev, onNext, consoleId = 'xbox360' }) {
   const console_ = getConsole(consoleId)
   const { user } = useAuth()
+  const { addToBatch } = useLibraryAddBatch()
 
   const [localStatus, setLocalStatus] = useState(status)
   const [rating,      setRatingState] = useState(status.rating ?? 0)
@@ -52,9 +54,6 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
   const [videoId,        setVideoId]        = useState(null)
 
   const [dlcOpen, setDlcOpen] = useState(false)
-  const [shareKey, setShareKey] = useState(null)
-  const [sharing, setSharing] = useState(false)
-  const [shared, setShared] = useState(false)
 
   const trailerCache = useRef(loadTrailerCache(console_))
   const startY = useRef(0)
@@ -67,8 +66,6 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
     setTrailerError(false)
     setVideoId(null)
     setDlcOpen(false)
-    setShareKey(null)
-    setShared(false)
 
     const cached = trailerCache.current[game.id]
     if (cached) { setVideoId(cached); return }
@@ -129,29 +126,13 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
       onStatusChange?.(game.id, key, next)
       checkAndUnlockAchievements(user.id).catch(() => {})
 
-      // Default is always share=off — explicit opt-in tap below, never a pre-checked
-      // box, so backfilling old games never floods the feed.
       if (next && SHAREABLE.includes(key)) {
-        setShareKey(key)
-        setShared(false)
-      } else if (!next && key === shareKey) {
-        setShareKey(null)
+        addToBatch(consoleId, game.id, key, rating || null)
       }
     } catch {
       setLocalStatus(prev)
     } finally {
       setSaving(null)
-    }
-  }
-
-  async function handleShare(share) {
-    if (!share) { setShareKey(null); return }
-    setSharing(true)
-    try {
-      await createFeedPost(consoleId, game.id, shareKey, rating || null)
-      setShared(true)
-    } finally {
-      setSharing(false)
     }
   }
 
@@ -190,7 +171,7 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
             {cover && (
               <img src={cover} alt={game.title}
                 className="absolute inset-0 w-full h-full object-cover rounded-r-lg sm:rounded-r-xl"
-                style={{ objectPosition: consoleId === 'snes' ? 'left center' : 'right center' }}
+                style={{ objectPosition: consoleId === 'snes' ? 'left center' : consoleId === 'nsw' ? 'center center' : 'right center' }}
                 onError={e => { e.target.style.display = 'none' }} />
             )}
           </div>
@@ -261,35 +242,6 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
               <StarRating value={rating} onChange={handleRating} disabled={!user} />
             </div>
           </div>
-
-          {/* Opt-in share-to-feed strip — only shown right after a share-eligible status change */}
-          {shareKey && (
-            <div className="flex items-center justify-between bg-social/10 border border-social/30 rounded-sm px-3 py-2">
-              {shared ? (
-                <p className="text-[12px] font-bold text-social">Compartilhado no feed ✓</p>
-              ) : (
-                <>
-                  <p className="text-[12px] font-bold text-white">Compartilhar no feed?</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleShare(true)}
-                      disabled={sharing}
-                      className="text-[11px] font-bold uppercase px-3 py-1 rounded-sm bg-social text-white disabled:opacity-50"
-                    >
-                      Sim
-                    </button>
-                    <button
-                      onClick={() => handleShare(false)}
-                      disabled={sharing}
-                      className="text-[11px] font-bold uppercase px-3 py-1 rounded-sm bg-[#222] text-gray-400 border border-[#2a2a2a]"
-                    >
-                      Não
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
 
           {/* Trailer — loads automatically when the modal opens */}
           <Section>

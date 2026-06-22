@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { isMockMode } from './mockState'
 import { getAllStatusRows } from './collection'
+import { getConsole } from '../consoles/registry'
 
 // Head-to-head duel voting + the compatibility score derived from it (plus rating
 // similarity). Session-only in-memory store for mock mode, same pattern as the other
@@ -78,31 +79,71 @@ export async function castDuelVote(consoleId, gameAId, gameBId, winnerGameId, vo
   return data
 }
 
-export async function getDuelTally(consoleId, gameAId, gameBId) {
-  const [normA, normB] = gameAId < gameBId ? [gameAId, gameBId] : [gameBId, gameAId]
+// Classic single-elimination seeding order (1v8, 4v5, 2v7, 3v6 for size 8) so the top
+// two seeds can only meet in the final.
+function seedOrder(size) {
+  if (size === 1) return [1]
+  const prev = seedOrder(size / 2)
+  const order = []
+  for (const s of prev) order.push(s, size + 1 - s)
+  return order
+}
 
-  const votes = isMockMode()
-    ? MOCK_DUEL_VOTES.filter(v => v.console === consoleId && v.game_a_id === normA && v.game_b_id === normB)
-    : await (async () => {
-      const { data, error } = await supabase
-        .from('duel_votes')
-        .select('winner_game_id')
-        .eq('console', consoleId)
-        .eq('game_a_id', normA)
-        .eq('game_b_id', normB)
-      if (error) throw error
-      return data
-    })()
+function topSeedNum(node) {
+  return node.type === 'seed' ? node.seedNum : node.winnerSeedNum
+}
 
-  const aWins = votes.filter(v => v.winner_game_id === gameAId).length
-  const bWins = votes.filter(v => v.winner_game_id === gameBId).length
-  const total = aWins + bWins
-  return {
-    total,
-    aWins, bWins,
-    aPct: total ? Math.round((aWins / total) * 100) : 0,
-    bPct: total ? Math.round((bWins / total) * 100) : 0,
+// Builds the bracket tree by recursively halving the seed order — each half already
+// contains exactly the seeds destined to meet there, so no manual round bookkeeping needed.
+function buildBracketTree(order, seeds) {
+  if (order.length === 1) {
+    const seedNum = order[0]
+    return { type: 'seed', seedNum, entry: seeds[seedNum - 1] }
   }
+  const mid = order.length / 2
+  const left = buildBracketTree(order.slice(0, mid), seeds)
+  const right = buildBracketTree(order.slice(mid), seeds)
+  // Retroactive bracket: the higher-win-count seed always "advances" — there's no
+  // re-simulated match, just the existing vote tally visualized as a tournament.
+  const winnerSeedNum = Math.min(topSeedNum(left), topSeedNum(right))
+  return { type: 'match', left, right, winnerSeedNum }
+}
+
+// For each console the user has voted on, ranks every game that appeared in a duel by
+// win count and lays the top ones out as a seeded single-elimination bracket.
+export async function getUserDuelBrackets(userId) {
+  const votes = await getUserDuelVotes(userId)
+  if (!votes.length) return []
+
+  const byConsole = {}
+  for (const v of votes) (byConsole[v.console] ||= []).push(v)
+
+  const brackets = []
+  for (const consoleId of Object.keys(byConsole)) {
+    const console_ = getConsole(consoleId)
+    if (!console_) continue
+
+    const winCount = new Map()
+    const seen = new Set()
+    for (const v of byConsole[consoleId]) {
+      seen.add(v.game_a_id); seen.add(v.game_b_id)
+      winCount.set(v.winner_game_id, (winCount.get(v.winner_game_id) || 0) + 1)
+    }
+
+    const ranked = [...seen]
+      .map(gameId => ({ gameId, game: console_.games.find(g => g.id === gameId), wins: winCount.get(gameId) || 0 }))
+      .filter(s => s.game)
+      .sort((a, b) => b.wins - a.wins || a.game.title.localeCompare(b.game.title))
+
+    const size = [8, 4, 2].find(n => ranked.length >= n)
+    if (!size) continue
+
+    const seeds = ranked.slice(0, size)
+    const root = buildBracketTree(seedOrder(size), seeds)
+    brackets.push({ consoleId, console: console_, seeds, root, championSeedNum: topSeedNum(root) })
+  }
+
+  return brackets.sort((a, b) => b.seeds.length - a.seeds.length)
 }
 
 // Combines duel agreement (% of shared voted pairs where both picked the same winner) with

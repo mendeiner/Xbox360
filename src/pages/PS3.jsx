@@ -18,25 +18,29 @@ const FEATURED = [
 const ROWS = [
   { id:'destaque',  title:'Em Destaque',     filter: g => FEATURED.some(t => g.title.includes(t)) },
   { id:'tipo',      title:'PSN',             filter: g => g.type === 'psn' },
-  { id:'rpg',       title:'RPG',             filter: g => (g.genre||[]).includes('RPG') },
-  { id:'acao',      title:'Ação & Aventura', filter: g => (g.genre||[]).includes('Ação') && !(g.genre||[]).includes('FPS') },
+  { id:'rpg',       title:'RPG',             filter: g => (g.genre||[]).includes('RPG') || (g.genre||[]).includes('JRPG') },
+  { id:'acao',      title:'Ação & Aventura', filter: g => ((g.genre||[]).includes('Ação') || (g.genre||[]).includes('Aventura')) && !(g.genre||[]).includes('FPS') },
   { id:'fps',       title:'FPS & TPS',       filter: g => (g.genre||[]).includes('FPS') || (g.genre||[]).includes('TPS') },
   { id:'terror',    title:'Terror',          filter: g => (g.genre||[]).includes('Terror') },
   { id:'luta',      title:'Luta',            filter: g => (g.genre||[]).includes('Luta') },
   { id:'plataforma',title:'Plataforma',      filter: g => (g.genre||[]).includes('Plataforma') },
   { id:'corrida',   title:'Corrida',         filter: g => (g.genre||[]).includes('Corrida') },
   { id:'esportes',  title:'Esportes',        filter: g => (g.genre||[]).includes('Esportes') },
-  { id:'musica',    title:'Música & Ritmo',  filter: g => (g.genre||[]).includes('Música') },
+  { id:'estrategia',title:'Estratégia',      filter: g => (g.genre||[]).includes('Estratégia') },
+  { id:'puzzle',    title:'Puzzle',          filter: g => (g.genre||[]).includes('Puzzle') },
+  { id:'familia',   title:'Família',         filter: g => (g.genre||[]).includes('Família') },
+  { id:'simulacao', title:'Simulação',       filter: g => (g.genre||[]).includes('Simulação') },
+  { id:'arcadegen', title:'Estilo Arcade',   filter: g => (g.genre||[]).includes('Arcade') },
+  { id:'musica',    title:'Música & Ritmo',  filter: g => (g.genre||[]).includes('Música') || (g.genre||[]).includes('Ritmo') },
 ]
 
 // ─── Row scroll strip ─────────────────────────────────────────────────────────
 function RowStrip({ games, statuses, onStatusChange, onOpen }) {
   const ref = useDragScroll()
-  const shown = games.slice(0, 40)
   return (
     <div ref={ref} className="flex gap-2.5 overflow-x-auto px-4 pb-3 pt-1 scrollbar-none select-none" style={{ cursor: 'grab' }}>
-      {shown.map(g => (
-        <GameCard key={g.id} game={g} consoleId={CONSOLE_ID} status={statuses[g.id] || {}} onStatusChange={onStatusChange} onClick={g2 => onOpen(shown, g2)} />
+      {games.map(g => (
+        <GameCard key={g.id} game={g} consoleId={CONSOLE_ID} status={statuses[g.id] || {}} onStatusChange={onStatusChange} onClick={g2 => onOpen(games, g2)} />
       ))}
     </div>
   )
@@ -187,13 +191,8 @@ export default function PS3() {
           ) : (
             <div className="space-y-6 pt-4">
               {(() => {
-                const shown = new Set()
                 return ROWS.map(row => {
-                  const games = console_.games.filter(row.filter).filter(g => {
-                    if (shown.has(g.id)) return false
-                    shown.add(g.id)
-                    return true
-                  })
+                  const games = console_.games.filter(row.filter)
                   if (!games.length) return null
                   return (
                     <section key={row.id}>

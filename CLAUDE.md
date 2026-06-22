@@ -86,13 +86,22 @@ Same `useConsolePage('ps3')` template as PS2. Two things differ from PS2's patte
 - **Catalog source**: built from GameTDB's `ps3tdb.xml` (gametdb.com/ps3tdb.zip) cross-referenced against `SvenGDK/PSMT-Covers` (mirrors `aldostools/Resources`) for confirmed cover availability. That source data has two known quirks worth remembering if the catalog is ever regenerated: titles are sometimes alphabetized GameTDB-style (`"Last of Us, The"`) and need reordering back to natural form, and the `<date year>` field is frequently a database-edit timestamp rather than the real release year (spot-checked: wrong on the majority of sampled titles) — `year` in `games.js` is taken as-is per explicit instruction, so treat it as low-confidence, not verified.
 - **No `dl` field yet** — archive.org download links were not researched for PS3 (`partIds`/`partNames` are empty in the registry); every game has a confirmed cover but no download source. This is a known, deliberate gap, not a bug.
 
+### NSW (`src/pages/NSW.jsx`)
+
+Breaks from the PS2/PS3 pattern in one fundamental way: there is no redump/no-intro ground-truth database or archive.org ROM scene for Switch cartridges, so RAWG (api.rawg.io, platform id 7) is the catalog *and* cover-art source directly, rather than enrichment-only the way `rawg_enrich.mjs` uses it for the other consoles.
+- **Catalog**: RAWG's full Switch platform listing (5,781 games) filtered to `added >= 200` (RAWG's community-engagement counter) to exclude obscure/unrated eShop shovelware, leaving 1,789 titles. Note RAWG's `added`/`released` are aggregated at the *game* level across all of a title's platforms, not Switch-specific — a game ported from an older platform shows that platform's original release year, not its Switch port date (e.g. NES-era titles show their 1980s year). Treat `year` as "the game's original release," not "when it came to Switch."
+- **No `dl` field, ever** — `partIds`/`partNames` are intentionally empty and will stay that way; Switch carts aren't a realistic archive.org/redump source the way retail discs and old ROMs are. This is a permanent gap, not a "not yet."
+- **No retail/digital type split** — checked both RAWG (genres/tags/stores/platforms, at list and detail level) and `blawar/titledb` (the Switch eShop title database, ~36k entries) directly; neither carries a physical-cart-vs-digital-only flag. Every game uses a single `type: 'retail'` value, same pattern as PS2/SNES, rather than guessing.
+- **Covers**: `compress_covers_nsw.py` downloads each game's RAWG `background_image` URL (captured in `covers_map.js` at catalog-build time) and resizes to half PS2/PS3's usual size/quality (200px height, WebP q40) given the catalog is ~9x bigger than any other console. `coversById: true`, same convention as PS2.
+- **No `localMP`/`players`/`online` flags** — not verifiable from RAWG without guessing, so `specialFilters` is empty.
+
 ### Cross-console dashboard (`src/pages/Dashboard.jsx`, `src/lib/collection.js`)
 
 `getCollection()` in `collection.js` iterates every `ready` console in the registry, fetches the current user's statuses via `getMyStatuses`, and joins them against that console's static `games` data, keeping only games with at least one status flag set. `Dashboard.jsx` (behind `PrivateRoute` at `/dashboard`) renders the result grouped by console, reusing `GameCard`/`GameModal` directly (each passed that entry's own `consoleId`) rather than building separate card UI — so a new console shows up on the dashboard automatically once it's registered with `ready: true`, no dashboard code changes required.
 
 ### Routing (`src/App.jsx`)
 
-`/` → `Login` (or redirect to `/home` if authed) · `/home` → `Home` (console picker, behind `PrivateRoute`) · `/xbox360` → `Xbox360` · `/ps2` → `PS2` · `/ps3` → `PS3` · `/dashboard` → `Dashboard` (behind `PrivateRoute`). Note `/xbox360`, `/ps2` and `/ps3` are **not** wrapped in `PrivateRoute`, so each page itself has to handle the no-`user` case (it does, by skipping the status fetch and disabling write actions).
+`/` → `Login` (or redirect to `/home` if authed) · `/home` → `Home` (console picker, behind `PrivateRoute`) · `/xbox360` → `Xbox360` · `/ps2` → `PS2` · `/ps3` → `PS3` · `/snes` → `SNES` · `/nsw` → `NSW` · `/dashboard` → `Dashboard` (behind `PrivateRoute`). Note the console pages are **not** wrapped in `PrivateRoute`, so each page itself has to handle the no-`user` case (it does, by skipping the status fetch and disabling write actions). NSW is registered with `ready: false` until its data/covers/trailers pipelines have been spot-checked further — flip it once satisfied (see `add-console` skill Phase 9/10).
 
 ### Styling
 

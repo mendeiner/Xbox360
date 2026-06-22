@@ -45,7 +45,8 @@ export default function UsersList({ friends, latestPostByUser = {}, loading, for
           <div className="space-y-1">
             {friends.map(f => {
               const post = latestPostByUser[f.id]
-              const console_ = post && getConsole(post.console)
+              const isBatch = post?.action === 'added_games'
+              const console_ = post && !isBatch && getConsole(post.console)
               const game = console_?.games.find(g => g.id === post.game_id)
               return (
                 <div key={f.id} className="flex items-center gap-3 px-2 py-2 hover:bg-white/5 transition-colors">
@@ -64,7 +65,11 @@ export default function UsersList({ friends, latestPostByUser = {}, loading, for
                   )}
                   <Link to={`/u/${f.username}`} className="min-w-0">
                     <p className="text-[13px] font-bold text-white truncate">{f.displayName || f.username}</p>
-                    {game ? (
+                    {isBatch ? (
+                      <p className="text-[10px] text-gray-500 truncate">
+                        adicionou <span className="text-gray-400 font-semibold">{post.items?.length || 0} jogos</span> · {timeAgo(post.created_at)}
+                      </p>
+                    ) : game ? (
                       <p className="text-[10px] text-gray-500 truncate">
                         {ACTION_LABEL[post.action]} <span className="text-gray-400 font-semibold">{game.title}</span> · {timeAgo(post.created_at)}
                       </p>

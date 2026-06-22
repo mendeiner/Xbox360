@@ -16,23 +16,39 @@ import { getFeedPosts, getCommunityRanking, latestPostByUser as buildLatestPostB
 import { getConsole } from '../consoles/registry'
 
 const CONSOLES = [
-  { id: 'xbox360', label: 'Xbox 360',  color: 'xbox',   textColor: 'text-xbox',  ready: true  },
-  { id: 'ps2',     label: 'PS2',       color: 'ps',     textColor: 'text-blue-400', ready: true },
-  { id: 'ps3',     label: 'PS3',       color: 'ps3',    textColor: 'text-cyan-400', ready: true  },
-  { id: 'snes',    label: 'SNES',      color: 'snes',   textColor: 'text-red-400',  ready: true },
-  { id: 'n64',     label: 'N64',       color: 'n64',    textColor: 'text-blue-300', ready: false },
-  { id: 'gamecube',label: 'GameCube',  color: 'gcube',  textColor: 'text-purple-400', ready: false },
-  { id: 'wii',     label: 'Wii',       color: 'wii',    textColor: 'text-gray-300', ready: false },
+  { id: 'xbox360',    label: 'Xbox 360',    color: 'xbox',       ready: true,  logo: '/logos/xbox360.svg'    },
+  { id: 'ps2',        label: 'PS2',         color: 'ps',         ready: true,  logo: '/logos/ps2.svg'        },
+  { id: 'ps3',        label: 'PS3',         color: 'ps3',        ready: true,  logo: '/logos/ps3.svg'        },
+  { id: 'snes',       label: 'SNES',        color: 'snes',       ready: true,  logo: '/logos/snes.svg'       },
+  { id: 'nsw',        label: 'Switch',      color: 'nsw',        ready: true,  logo: '/logos/nsw.svg'        },
+  { id: 'n64',        label: 'N64',         color: 'n64',        ready: false, logo: '/logos/n64.svg'        },
+  { id: 'gamecube',   label: 'GameCube',    color: 'gcube',      ready: false, logo: '/logos/gamecube.svg'   },
+  { id: 'wii',        label: 'Wii',         color: 'wii',        ready: false, logo: '/logos/wii.svg'        },
+  { id: 'ps4',        label: 'PS4',         color: 'ps4',        ready: false, logo: '/logos/ps4.svg'        },
+  { id: 'xboxone',    label: 'Xbox One',    color: 'xboxone',    ready: false, logo: '/logos/xboxone.svg'    },
+  { id: 'xboxseries', label: 'Xbox Series', color: 'xboxseries', ready: false, logo: '/logos/xboxseries.svg' },
+  { id: 'pc',         label: 'PC',          color: 'pc',         ready: false, logo: '/logos/pc.svg'         },
+  { id: 'gba',        label: 'GBA',         color: 'gba',        ready: true,  logo: '/logos/gba.svg'        },
+  { id: 'gbc',        label: 'GBC',         color: 'gbc',        ready: false, logo: '/logos/gbc.svg'        },
+  { id: '3ds',        label: '3DS',         color: 'n3ds',       ready: false, logo: '/logos/3ds.svg'        },
 ]
 
 const ACCENT_MAP = {
-  xbox:  { border: 'border-xbox/40',   bg: 'hover:bg-xbox/10',   dot: 'bg-xbox'   },
-  ps:    { border: 'border-blue-600/40', bg: 'hover:bg-blue-900/20', dot: 'bg-blue-500' },
-  ps3:   { border: 'border-cyan-600/40', bg: 'hover:bg-cyan-900/20', dot: 'bg-cyan-500' },
-  snes:  { border: 'border-red-700/40',  bg: 'hover:bg-red-900/20',  dot: 'bg-red-500'  },
-  n64:   { border: 'border-blue-500/40', bg: 'hover:bg-blue-900/20', dot: 'bg-blue-400' },
-  gcube: { border: 'border-purple-600/40', bg: 'hover:bg-purple-900/20', dot: 'bg-purple-500' },
-  wii:   { border: 'border-gray-500/40', bg: 'hover:bg-gray-800/20', dot: 'bg-gray-400' },
+  xbox:       { border: 'border-xbox/40',   bg: 'hover:bg-xbox/10'   },
+  ps:         { border: 'border-blue-600/40', bg: 'hover:bg-blue-900/20' },
+  ps3:        { border: 'border-cyan-600/40', bg: 'hover:bg-cyan-900/20' },
+  snes:       { border: 'border-red-700/40',  bg: 'hover:bg-red-900/20'  },
+  n64:        { border: 'border-blue-500/40', bg: 'hover:bg-blue-900/20' },
+  gcube:      { border: 'border-purple-600/40', bg: 'hover:bg-purple-900/20' },
+  nsw:        { border: 'border-red-500/40', bg: 'hover:bg-white/10' },
+  ps4:        { border: 'border-blue-600/40', bg: 'hover:bg-blue-900/20' },
+  xboxone:    { border: 'border-xbox/40',     bg: 'hover:bg-xbox/10'      },
+  xboxseries: { border: 'border-xbox/40',     bg: 'hover:bg-xbox/10'      },
+  pc:         { border: 'border-sky-500/40',  bg: 'hover:bg-sky-900/20'   },
+  gba:        { border: 'border-indigo-600/40', bg: 'hover:bg-indigo-900/20' },
+  gbc:        { border: 'border-violet-500/40', bg: 'hover:bg-violet-900/20' },
+  n3ds:       { border: 'border-red-600/40',  bg: 'hover:bg-red-900/20'   },
+  wii:   { border: 'border-gray-500/40', bg: 'hover:bg-gray-800/20' },
 }
 
 export default function Home() {
@@ -86,6 +102,8 @@ export default function Home() {
     getConsoleCounts('ps2', user.id).then(c => setCounts(prev => ({ ...prev, ps2: c })))
     getConsoleCounts('ps3', user.id).then(c => setCounts(prev => ({ ...prev, ps3: c })))
     getConsoleCounts('snes', user.id).then(c => setCounts(prev => ({ ...prev, snes: c })))
+    getConsoleCounts('nsw', user.id).then(c => setCounts(prev => ({ ...prev, nsw: c })))
+    getConsoleCounts('gba', user.id).then(c => setCounts(prev => ({ ...prev, gba: c })))
   }, [user])
 
   useEffect(() => {
@@ -231,12 +249,7 @@ export default function Home() {
                     : 'border-surface-4 opacity-40 cursor-not-allowed'
                   }`}
               >
-                {/* Color dot */}
-                <div className={`w-2.5 h-2.5 rounded-full ${accent.dot} mb-3`} />
-
-                <p className={`font-black text-lg leading-tight ${c.ready ? c.textColor : 'text-gray-500'}`}>
-                  {c.label}
-                </p>
+                <img src={c.logo} alt={c.label} className="h-8 max-w-[85%] object-contain object-left mb-3" />
 
                 {c.ready && count ? (
                   <div className="mt-3 space-y-1">

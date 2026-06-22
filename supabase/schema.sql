@@ -179,14 +179,15 @@ create trigger game_statuses_touch_updated_at
   before update on public.game_statuses
   for each row execute function public.touch_game_statuses_updated_at();
 
--- ── Feed posts (opt-in only, never auto-backfilled) ──────────
+-- ── Feed posts (auto-posted when a status flag is first set) ─
 create table if not exists public.feed_posts (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null default auth.uid() references public.profiles(id) on delete cascade,
-  console     text not null,
-  game_id     integer not null,
-  action      text not null check (action in ('joguei','zerado','cem_porcento')),
+  console     text,                      -- null when action = 'added_games'
+  game_id     integer,                   -- null when action = 'added_games'
+  action      text not null check (action in ('joguei','zerado','cem_porcento','quero','added_games')),
   rating      numeric(2,1),
+  items       jsonb,                     -- only for action='added_games': [{console, game_id, action, rating}]
   created_at  timestamptz default now()
 );
 
@@ -386,10 +387,11 @@ create policy "duel_votes_friend_read" on public.duel_votes for select
     )
   );
 
--- ── Polls ("qual jogo jogar agora") ───────────────────────────
+-- ── Polls (creator picks a title, a console, and any games from its catalog) ──
 create table if not exists public.polls (
   id          uuid primary key default gen_random_uuid(),
   creator_id  uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  title       text not null,
   console     text not null,
   game_ids    jsonb not null,
   created_at  timestamptz default now(),

@@ -5,6 +5,7 @@ import Top10Editor from '../components/social/Top10Editor'
 import AchievementBadge from '../components/social/AchievementBadge'
 import AvatarCropModal from '../components/social/AvatarCropModal'
 import PollResultCard from '../components/social/PollResultCard'
+import DuelBracket from '../components/social/DuelBracket'
 import { coverSrc, coverObjectPosition } from '../consoles/dl'
 import { readyConsoles } from '../consoles/registry'
 import { useAuth } from '../contexts/AuthContext'
@@ -12,6 +13,7 @@ import { getProfileByUsername, updateAvatar } from '../lib/db'
 import { getProfileStats, getAllStatusRows, getTasteProfile, getConsoleCompletion } from '../lib/collection'
 import { ACHIEVEMENTS, getUserAchievements, checkAndUnlockAchievements, getFeedPosts, ACTION_LABEL } from '../lib/social'
 import { getClosedPollsByCreator, getPollResults } from '../lib/polls'
+import { getUserDuelBrackets } from '../lib/duels'
 
 const TABS = [
   { id: 'collection', label: 'Coleção' },
@@ -19,6 +21,7 @@ const TABS = [
   { id: 'achievements', label: 'Conquistas' },
   { id: 'activity', label: 'Atividade' },
   { id: 'polls', label: 'Votações' },
+  { id: 'duels', label: 'Duelos' },
 ]
 
 // Groups this profile's status rows by console into "estante" shelves: the main row of
@@ -65,6 +68,7 @@ export default function Profile() {
   const [recentPosts, setRecentPosts] = useState([])
   const [closedPolls, setClosedPolls] = useState([])
   const [pollResults, setPollResults] = useState({})
+  const [duelBrackets, setDuelBrackets] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [cropSrc, setCropSrc] = useState(null)
@@ -103,6 +107,11 @@ export default function Profile() {
         await Promise.all(polls.map(async poll => { res[poll.id] = await getPollResults(poll.id) }))
         if (alive) setPollResults(res)
       } catch { /* no closed polls yet, ignore */ }
+
+      try {
+        const brackets = await getUserDuelBrackets(p.id)
+        if (alive) setDuelBrackets(brackets)
+      } catch { /* no duel votes yet, ignore */ }
 
       setLoading(false)
     })
@@ -314,7 +323,9 @@ export default function Profile() {
                 <div className="space-y-1.5">
                   {recentPosts.map(post => (
                     <div key={post.id} className="text-xs text-gray-400 bg-social-ink border border-[#222b4a] px-3 py-2">
-                      {ACTION_LABEL[post.action]} um jogo · {new Date(post.created_at).toLocaleDateString('pt-BR')}
+                      {post.action === 'added_games'
+                        ? `adicionou ${post.items?.length || 0} jogos`
+                        : `${ACTION_LABEL[post.action]} um jogo`} · {new Date(post.created_at).toLocaleDateString('pt-BR')}
                     </div>
                   ))}
                 </div>
@@ -335,6 +346,16 @@ export default function Profile() {
               closedPolls.map(poll => (
                 <PollResultCard key={poll.id} poll={poll} results={pollResults[poll.id]} />
               ))
+            )}
+          </section>
+        )}
+
+        {tab === 'duels' && (
+          <section className="space-y-10">
+            {duelBrackets.length === 0 ? (
+              <p className="text-gray-600 text-sm">Nenhum duelo votado ainda.</p>
+            ) : (
+              duelBrackets.map(bracket => <DuelBracket key={bracket.consoleId} bracket={bracket} />)
             )}
           </section>
         )}

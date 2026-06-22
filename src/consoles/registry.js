@@ -14,6 +14,14 @@ import { SNES_GAMES } from '../data/snes/games'
 import { COVERS as SNES_COVERS } from '../data/snes/covers_map'
 import { DLC_DATA as SNES_DLC } from '../data/snes/dlc_data'
 import { TRAILERS as SNES_TRAILERS } from '../data/snes/trailers_data'
+import { NSW_GAMES } from '../data/nsw/games'
+import { COVERS as NSW_COVERS } from '../data/nsw/covers_map'
+import { DLC_DATA as NSW_DLC } from '../data/nsw/dlc_data'
+import { TRAILERS as NSW_TRAILERS } from '../data/nsw/trailers_data'
+import { GBA_GAMES } from '../data/gba/games'
+import { COVERS as GBA_COVERS } from '../data/gba/covers_map'
+import { DLC_DATA as GBA_DLC } from '../data/gba/dlc_data'
+import { TRAILERS as GBA_TRAILERS } from '../data/gba/trailers_data'
 
 const XBOX360_SPECIAL = [
   { id: 'dl',      label: 'Com Download' },
@@ -285,6 +293,88 @@ const SNES_GROUPS = [
       { id: 'Tabuleiro',     label: 'Tabuleiro' },
       { id: 'Cassino',       label: 'Cassino' },
       { id: 'Cartas',        label: 'Cartas' },
+    ],
+  },
+]
+
+// No dl/localMP/online/camera fields tracked for NSW (none of those are verifiable from RAWG
+// data without guessing), so there's nothing to offer as a special filter.
+const NSW_SPECIAL = []
+
+const NSW_GROUPS = [
+  {
+    id: 'status', title: 'Status',
+    filters: [
+      { id: 'joguei',       label: 'Joguei' },
+      { id: 'zerado',       label: 'Zerado' },
+      { id: 'cem_porcento', label: '100%' },
+      { id: 'quero',        label: 'Quero Jogar' },
+    ],
+  },
+  {
+    id: 'genero', title: 'Gênero',
+    filters: [
+      { id: 'Ação',       label: 'Ação' },
+      { id: 'Aventura',   label: 'Aventura' },
+      { id: 'RPG',        label: 'RPG' },
+      { id: 'Estratégia', label: 'Estratégia' },
+      { id: 'FPS',        label: 'FPS' },
+      { id: 'Simulação',  label: 'Simulação' },
+      { id: 'Puzzle',     label: 'Puzzle' },
+      { id: 'Arcade',     label: 'Arcade' },
+      { id: 'Plataforma', label: 'Plataforma' },
+      { id: 'Corrida',    label: 'Corrida' },
+      { id: 'Esportes',   label: 'Esportes' },
+      { id: 'Luta',       label: 'Luta' },
+      { id: 'Família',    label: 'Família' },
+      { id: 'Indie',      label: 'Indie' },
+      { id: 'Casual',     label: 'Casual' },
+      { id: 'MMO',        label: 'MMO' },
+      { id: 'Tabuleiro',  label: 'Tabuleiro' },
+      { id: 'Cartas',     label: 'Cartas' },
+      { id: 'Educativo',  label: 'Educativo' },
+    ],
+  },
+]
+
+// Link Cable local multiplayer (TheGamesDB `players` > 1) is the only verifiable special
+// flag for GBA -- no online play infrastructure existed for the handheld, so no 'online'.
+const GBA_SPECIAL = [
+  { id: 'dl',      label: 'Com Download' },
+  { id: 'localMP', label: 'Link Cable' },
+]
+
+const GBA_GROUPS = [
+  {
+    id: 'status', title: 'Status',
+    filters: [
+      { id: 'joguei',       label: 'Joguei' },
+      { id: 'zerado',       label: 'Zerado' },
+      { id: 'cem_porcento', label: '100%' },
+      { id: 'quero',        label: 'Quero Jogar' },
+    ],
+  },
+  {
+    id: 'genero', title: 'Gênero',
+    filters: [
+      { id: 'Ação',          label: 'Ação' },
+      { id: 'Plataforma',    label: 'Plataforma' },
+      { id: 'Aventura',      label: 'Aventura' },
+      { id: 'Arcade',        label: 'Arcade' },
+      { id: 'Esportes',      label: 'Esportes' },
+      { id: 'Corrida',       label: 'Corrida' },
+      { id: 'RPG',           label: 'RPG' },
+      { id: 'Luta',          label: 'Luta' },
+      { id: 'FPS',           label: 'FPS' },
+      { id: 'Puzzle',        label: 'Puzzle' },
+      { id: 'Estratégia',    label: 'Estratégia' },
+      { id: 'Simulação',     label: 'Simulação' },
+      { id: 'Casual',        label: 'Casual' },
+      { id: 'Família',       label: 'Família' },
+      { id: 'Indie',         label: 'Indie' },
+      { id: 'Tabuleiro',     label: 'Tabuleiro' },
+      { id: 'Cartas',        label: 'Cartas' },
+      { id: 'Educativo',     label: 'Educativo' },
     ],
   },
 ]
@@ -574,6 +664,79 @@ export const CONSOLES = {
 
     specialFilters: SNES_SPECIAL,
     filterGroups: SNES_GROUPS,
+  },
+
+  nsw: {
+    id: 'nsw',
+    label: 'Switch',
+    accentColor: '#E4000F',
+    coverPrefix: '/covers/nsw',
+    ready: true,
+
+    games: NSW_GAMES,
+    // game id -> RAWG `background_image` URL at fetch time; cover *files* are saved and looked
+    // up by game id (`coversById` below), same convention as PS2 — not by any RAWG/title id.
+    covers: NSW_COVERS,
+    coversById: true,
+    dlc: NSW_DLC,
+    trailers: NSW_TRAILERS,
+
+    // No archive.org download research for NSW — Switch carts aren't a realistic redump/
+    // archive.org source the way retro discs/ROMs are. A deliberate, permanent gap, not a bug.
+    partIds: {},
+    partNames: {},
+    dlTypeLabel() { return 'Download' },
+
+    // RAWG and titledb were both checked directly and neither carries a physical-cart-vs-
+    // digital-only flag, so it isn't tracked rather than guessed — every game uses a single
+    // 'retail' type value, same pattern as PS2/SNES.
+    types: ['retail'],
+    typeMap: {
+      retail: ['Retail', 'text-red-400 bg-red-400/10 border-red-400/20'],
+    },
+
+    trailerSearchSuffix: 'Nintendo Switch trailer',
+    trailerCacheKey: 'nsw_trailers',
+
+    specialFilters: NSW_SPECIAL,
+    filterGroups: NSW_GROUPS,
+  },
+
+  gba: {
+    id: 'gba',
+    label: 'GBA',
+    accentColor: '#7B2D8E',
+    coverPrefix: '/covers/gba',
+    ready: true,
+
+    games: GBA_GAMES,
+    // game id -> No-Intro USA serial (4-char GBA game code); cover *files* are saved and
+    // looked up by game id (`coversById` below), same convention as PS2/SNES/NSW.
+    covers: GBA_COVERS,
+    coversById: true,
+    dlc: GBA_DLC,
+    trailers: GBA_TRAILERS,
+
+    // Confirmed via archive.org metadata API: a single item holding the full No-Intro GBA
+    // romset (ef_gba_no-intro_2024-02-21). One part, unlike PS2/PS3's alphabetical splits.
+    partIds: {
+      p1: 'ef_gba_no-intro_2024-02-21',
+    },
+    partNames: {
+      p1: 'No-Intro USA Romset',
+    },
+    dlTypeLabel() { return 'Download' },
+
+    types: ['retail'],
+    typeMap: {
+      retail: ['Retail', 'text-purple-400 bg-purple-400/10 border-purple-400/20'],
+    },
+
+    trailerSearchSuffix: 'GBA trailer',
+    trailerCacheKey: 'gba_trailers',
+
+    specialFilters: GBA_SPECIAL,
+    filterGroups: GBA_GROUPS,
   },
 }
 

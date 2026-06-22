@@ -10,10 +10,16 @@ export async function getMyStatuses(console_name) {
   if (isMockMode()) {
     return JSON.parse(localStorage.getItem(mockKey(console_name)) || '{}')
   }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return {}
+  // Explicit user_id filter, not just RLS: the friends_read policy now lets a user see
+  // every other user's rows too (everyone is auto-friended), so without this filter
+  // "my own statuses" would include every friend's marked games as well.
   const { data, error } = await supabase
     .from('game_statuses')
     .select('*')
     .eq('console', console_name)
+    .eq('user_id', user.id)
   if (error) throw error
   return Object.fromEntries(data.map(r => [r.game_id, r]))
 }

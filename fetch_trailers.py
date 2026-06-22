@@ -21,13 +21,15 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-WORKERS   = 8
 TIMEOUT_S = 25
 
 parser = argparse.ArgumentParser()
 parser.add_argument("console", help="console folder name under src/data/, e.g. ps2, xbox360")
 parser.add_argument("--suffix", default=None, help='search suffix, default "<console> trailer"')
+parser.add_argument("--workers", type=int, default=8, help="concurrent yt-dlp searches (default 8)")
 args = parser.parse_args()
+
+WORKERS = args.workers
 
 console_dir   = Path(f"src/data/{args.console}")
 games_file    = console_dir / "games.js"

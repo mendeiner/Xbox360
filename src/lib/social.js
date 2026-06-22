@@ -43,6 +43,34 @@ export async function createFeedPost(console_name, gameId, action, rating = null
   return data
 }
 
+// One row covering several games added in the same browsing session (see
+// LibraryAddBatchContext) — rendered distinctly by FeedPostCard since it has no single
+// console/game_id of its own.
+export async function createBatchFeedPost(items) {
+  if (isMockMode()) {
+    const post = {
+      id: `mock-post-mine-${Date.now()}`,
+      user_id: 'mock-user',
+      console: null,
+      game_id: null,
+      action: 'added_games',
+      rating: null,
+      items,
+      created_at: new Date().toISOString(),
+      profiles: MOCK_ME,
+    }
+    MOCK_FEED_POSTS.unshift(post)
+    return post
+  }
+  const { data, error } = await supabase
+    .from('feed_posts')
+    .insert({ action: 'added_games', items })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 // viewerId (optional) folds in the current viewer's own reaction per post, so
 // FeedPostCard doesn't need a separate getReactionSummary round-trip per card.
 export async function getFeedPosts(userIds, { limit = 30, before, viewerId } = {}) {
@@ -209,10 +237,10 @@ export const REACTION_GLYPHS = {
   fire: '🔥', laugh: '😂', mind_blown: '🤯', skull: '💀',
   clap: '👏', '100': '💯', goat: '🐐', same: '🙋',
 }
-export const ACTION_LABEL = { joguei: 'jogou', zerado: 'zerou', cem_porcento: 'completou 100% de' }
+export const ACTION_LABEL = { joguei: 'jogou', zerado: 'zerou', cem_porcento: 'completou 100% de', quero: 'quer jogar' }
 
-// Only these status transitions are share-eligible — never 'quero', never on un-checking.
-export const SHAREABLE = ['joguei', 'zerado', 'cem_porcento']
+// Status transitions that post to the feed automatically — only on going from unset to set.
+export const SHAREABLE = ['joguei', 'zerado', 'cem_porcento', 'quero']
 
 export async function setReaction(postId, reaction, userId) {
   if (!REACTIONS.includes(reaction)) throw new Error(`Unknown reaction: ${reaction}`)

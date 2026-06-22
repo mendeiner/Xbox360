@@ -2,17 +2,29 @@ import { useState, useEffect, useCallback } from 'react'
 import { coverSrc, coverObjectPosition } from '../../consoles/dl'
 import { getConsole } from '../../consoles/registry'
 import { getActivePolls, votePoll, getPollResults, createPoll } from '../../lib/polls'
-import { getAllStatusRows } from '../../lib/collection'
+import PollCreateModal from './PollCreateModal'
 
-// Small strip above the feed for open "qual jogo jogar agora" polls from self+friends, with
-// live vote bars. Deliberately NOT merged into ActivityFeed's infinite scroll (a third
-// independently-paginated source would compound the feed's existing two-cursor merge risk;
-// see plan). Poll creation picks from the user's own backlog ("quero") rather than a full
-// game-picker UI, to keep this additive feature small.
+// Open polls last exactly 1 week (see createPoll's default closesAt) before they're
+// archived into /polls and the profile's "Votações" tab — this renders the countdown.
+function timeUntil(closesAt) {
+  if (!closesAt) return null
+  const ms = new Date(closesAt).getTime() - Date.now()
+  if (ms <= 0) return 'encerrando...'
+  const days = Math.floor(ms / 86400000)
+  if (days >= 1) return `encerra em ${days}d`
+  const hours = Math.floor(ms / 3600000)
+  if (hours >= 1) return `encerra em ${hours}h`
+  return `encerra em ${Math.max(1, Math.floor(ms / 60000))}min`
+}
+
+// Small strip above the feed for open polls from self+friends, with live vote bars.
+// Deliberately NOT merged into ActivityFeed's infinite scroll (a third independently-
+// paginated source would compound the feed's existing two-cursor merge risk; see plan).
 export default function PollStrip({ userId, userIds = [] }) {
   const [polls, setPolls] = useState([])
   const [loading, setLoading] = useState(true)
   const [results, setResults] = useState({})
+  const [showCreate, setShowCreate] = useState(false)
 
   const key = userIds.join(',')
 
@@ -37,41 +49,40 @@ export default function PollStrip({ userId, userIds = [] }) {
     setResults(prev => ({ ...prev, [pollId]: r }))
   }
 
-  async function handleCreate() {
-    const rows = await getAllStatusRows(userId)
-    const quero = rows.filter(r => r.quero)
-    const byConsole = {}
-    for (const r of quero) (byConsole[r.console] ||= []).push(r)
-    const consoleId = Object.keys(byConsole).find(c => byConsole[c].length >= 2)
-    if (!consoleId) return
-    const gameIds = byConsole[consoleId].slice(0, 3).map(r => r.game_id)
-    await createPoll(userId, consoleId, gameIds)
+  async function handleSubmitCreate({ consoleId, title, gameIds, duration }) {
+    await createPoll(userId, consoleId, gameIds, title, duration)
+    setShowCreate(false)
     load()
   }
 
   if (!userId || loading) return null
 
-  if (polls.length === 0) {
-    return (
-      <div className="mb-6">
+  const hasOwnPoll = polls.some(p => p.creator_id === userId)
+
+  return (
+    <div className="mb-6 space-y-3">
+      {!hasOwnPoll && (
         <button
-          onClick={handleCreate}
+          onClick={() => setShowCreate(true)}
           className="text-[11px] font-bold text-gray-500 hover:text-white border border-[#222b4a] hover:border-social/40 px-3 py-1.5 transition-colors"
         >
           + Criar votação com a galera
         </button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="mb-6 space-y-3">
+      )}
+      {showCreate && (
+        <PollCreateModal onClose={() => setShowCreate(false)} onSubmit={handleSubmitCreate} />
+      )}
       {polls.map(poll => {
         const console_ = getConsole(poll.console)
         const res = results[poll.id] || { counts: {}, total: 0 }
         return (
           <div key={poll.id} className="bg-social-ink border border-[#222b4a] p-4">
-            <p className="text-[11px] font-black uppercase tracking-[1.5px] text-social mb-3">Qual jogar agora?</p>
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <p className="text-[11px] font-black uppercase tracking-[1.5px] text-social">{poll.title}</p>
+              {timeUntil(poll.closes_at) && (
+                <p className="text-[10px] text-gray-500 shrink-0">{timeUntil(poll.closes_at)}</p>
+              )}
+            </div>
             <div className="flex gap-3 overflow-x-auto">
               {poll.game_ids.map(gameId => {
                 const game = console_?.games.find(g => g.id === gameId)

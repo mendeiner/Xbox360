@@ -6,10 +6,10 @@ export default function Nav() {
   const { user, profile, signOut, mockLogin } = useAuth()
 
   return (
-    <nav className="sticky top-0 z-50 bg-surface-1/90 backdrop-blur border-b border-surface-4 px-6 py-3 flex items-center justify-between">
+    <nav className="sticky top-0 z-50 bg-surface-1/90 backdrop-blur border-b border-surface-4 px-6 py-0.5 flex items-center justify-between">
       <div className="flex items-center gap-5">
-        <Link to="/home" className="text-xbox font-black text-lg tracking-tight hover:text-xbox-light transition-colors">
-          GAME TRACKER
+        <Link to="/home" className="flex items-center hover:opacity-90 transition-opacity">
+          <img src="/jogalera-logo.svg" alt="JogaLera" className="h-14 w-auto" />
         </Link>
         {user && (
           <div className="hidden sm:flex items-center gap-4">

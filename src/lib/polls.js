@@ -6,20 +6,26 @@ import { isMockMode } from './mockState'
 const MOCK_POLLS = []     // { id, creator_id, console, game_ids, created_at, closes_at, profiles }
 const MOCK_POLL_VOTES = [] // { poll_id, voter_id, game_id }
 
-const POLL_DURATION_MS = 7 * 24 * 60 * 60 * 1000
+// Selectable poll lifetimes — kept to exactly these three options in the create modal.
+export const POLL_DURATIONS = {
+  '1d': { label: '1 dia', ms: 24 * 60 * 60 * 1000 },
+  '1w': { label: '1 semana', ms: 7 * 24 * 60 * 60 * 1000 },
+  '1m': { label: '1 mês', ms: 30 * 24 * 60 * 60 * 1000 },
+}
 
-export async function createPoll(creatorId, consoleId, gameIds, closesAt = new Date(Date.now() + POLL_DURATION_MS).toISOString()) {
+export async function createPoll(creatorId, consoleId, gameIds, title, durationKey = '1w') {
+  const closesAt = new Date(Date.now() + POLL_DURATIONS[durationKey].ms).toISOString()
   if (isMockMode()) {
     const poll = {
       id: `mock-poll-${Date.now()}`, creator_id: creatorId, console: consoleId,
-      game_ids: gameIds, created_at: new Date().toISOString(), closes_at: closesAt,
+      title, game_ids: gameIds, created_at: new Date().toISOString(), closes_at: closesAt,
     }
     MOCK_POLLS.unshift(poll)
     return poll
   }
   const { data, error } = await supabase
     .from('polls')
-    .insert({ console: consoleId, game_ids: gameIds, closes_at: closesAt })
+    .insert({ console: consoleId, title, game_ids: gameIds, closes_at: closesAt })
     .select()
     .single()
   if (error) throw error

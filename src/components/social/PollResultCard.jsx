@@ -12,7 +12,7 @@ export default function PollResultCard({ poll, results, showCreator = false }) {
   return (
     <div className="bg-social-ink border border-[#222b4a] p-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-black uppercase tracking-[1.5px] text-social">Qual jogar agora?</p>
+        <p className="text-[11px] font-black uppercase tracking-[1.5px] text-social">{poll.title}</p>
         <p className="text-[10px] text-gray-500">
           {showCreator && poll.profiles && (
             <span className="font-bold text-gray-400">{poll.profiles.display_name || poll.profiles.username} · </span>
