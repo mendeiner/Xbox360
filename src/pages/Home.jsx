@@ -23,14 +23,21 @@ const CONSOLES = [
   { id: 'nsw',        label: 'Switch',      color: 'nsw',        ready: true,  logo: '/logos/nsw.svg'        },
   { id: 'n64',        label: 'N64',         color: 'n64',        ready: false, logo: '/logos/n64.svg'        },
   { id: 'gamecube',   label: 'GameCube',    color: 'gcube',      ready: false, logo: '/logos/gamecube.svg'   },
-  { id: 'wii',        label: 'Wii',         color: 'wii',        ready: false, logo: '/logos/wii.svg'        },
-  { id: 'ps4',        label: 'PS4',         color: 'ps4',        ready: false, logo: '/logos/ps4.svg'        },
+  { id: 'wii',        label: 'Wii',         color: 'wii',        ready: true,  logo: '/logos/wii.svg'        },
+  { id: 'ps4',        label: 'PS4',         color: 'ps4',        ready: true,  logo: '/logos/ps4.svg'        },
   { id: 'xboxone',    label: 'Xbox One',    color: 'xboxone',    ready: false, logo: '/logos/xboxone.svg'    },
   { id: 'xboxseries', label: 'Xbox Series', color: 'xboxseries', ready: false, logo: '/logos/xboxseries.svg' },
   { id: 'pc',         label: 'PC',          color: 'pc',         ready: false, logo: '/logos/pc.svg'         },
   { id: 'gba',        label: 'GBA',         color: 'gba',        ready: true,  logo: '/logos/gba.svg'        },
   { id: 'gbc',        label: 'GBC',         color: 'gbc',        ready: false, logo: '/logos/gbc.svg'        },
   { id: '3ds',        label: '3DS',         color: 'n3ds',       ready: false, logo: '/logos/3ds.svg'        },
+  { id: 'xboxorig',   label: 'Xbox',        color: 'xboxorig',   ready: false, logo: '/logos/xboxorig.svg'   },
+  { id: 'ps5',        label: 'PS5',         color: 'ps5',        ready: false, logo: '/logos/ps5.svg'        },
+  { id: 'wiiu',       label: 'Wii U',       color: 'wiiu',       ready: false, logo: '/logos/wiiu.svg'       },
+  { id: 'nds',        label: 'Nintendo DS', color: 'nds',        ready: false, logo: '/logos/nds.svg'        },
+  { id: 'dsi',        label: 'Nintendo DSi',color: 'dsi',        ready: false, logo: '/logos/dsi.svg'        },
+  { id: 'psp',        label: 'PSP',         color: 'psp',        ready: false, logo: '/logos/psp.svg'        },
+  { id: 'vita',       label: 'PS Vita',     color: 'vita',       ready: false, logo: '/logos/vita.svg'       },
 ]
 
 const ACCENT_MAP = {
@@ -49,6 +56,13 @@ const ACCENT_MAP = {
   gbc:        { border: 'border-violet-500/40', bg: 'hover:bg-violet-900/20' },
   n3ds:       { border: 'border-red-600/40',  bg: 'hover:bg-red-900/20'   },
   wii:   { border: 'border-gray-500/40', bg: 'hover:bg-gray-800/20' },
+  xboxorig:   { border: 'border-xbox/40',     bg: 'hover:bg-xbox/10'      },
+  ps5:        { border: 'border-blue-700/40', bg: 'hover:bg-blue-900/20' },
+  wiiu:       { border: 'border-teal-500/40', bg: 'hover:bg-teal-900/20' },
+  nds:        { border: 'border-blue-400/40', bg: 'hover:bg-blue-900/20' },
+  dsi:        { border: 'border-neutral-400/40', bg: 'hover:bg-neutral-800/20' },
+  psp:        { border: 'border-slate-400/40', bg: 'hover:bg-slate-800/20' },
+  vita:       { border: 'border-indigo-400/40', bg: 'hover:bg-indigo-900/20' },
 }
 
 export default function Home() {
@@ -104,6 +118,8 @@ export default function Home() {
     getConsoleCounts('snes', user.id).then(c => setCounts(prev => ({ ...prev, snes: c })))
     getConsoleCounts('nsw', user.id).then(c => setCounts(prev => ({ ...prev, nsw: c })))
     getConsoleCounts('gba', user.id).then(c => setCounts(prev => ({ ...prev, gba: c })))
+    getConsoleCounts('wii', user.id).then(c => setCounts(prev => ({ ...prev, wii: c })))
+    getConsoleCounts('ps4', user.id).then(c => setCounts(prev => ({ ...prev, ps4: c })))
   }, [user])
 
   useEffect(() => {
@@ -121,7 +137,7 @@ export default function Home() {
       const statuses = { ...g.statuses, [gameId]: { ...(g.statuses[gameId] || {}), [key]: value } }
       const games = g.console.games.filter(game => {
         const s = statuses[game.id]
-        return s && (s.joguei || s.zerado || s.cem_porcento || s.quero)
+        return s && (s.joguei || s.zerado || s.cem_porcento || s.quero || s.jogando)
       })
       return { ...g, statuses, games }
     }).filter(g => g.games.length > 0))
@@ -253,6 +269,7 @@ export default function Home() {
 
                 {c.ready && count ? (
                   <div className="mt-3 space-y-1">
+                    <Stat label="Jogando" val={count.jogando} />
                     <Stat label="Joguei"  val={count.joguei} />
                     <Stat label="Zerado"  val={count.zerado} />
                     <Stat label="100%"    val={count.cem_porcento} gold />

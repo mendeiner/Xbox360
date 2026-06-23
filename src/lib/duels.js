@@ -30,7 +30,7 @@ async function getUserDuelVotes(userId) {
 // voted on by that user. Returns null if there isn't enough played-game variety yet.
 export async function getNextDuelPair(userId) {
   const rows = await getAllStatusRows(userId)
-  const played = rows.filter(r => r.joguei || r.zerado || r.cem_porcento)
+  const played = rows.filter(r => r.joguei || r.zerado || r.cem_porcento || r.jogando)
 
   const byConsole = {}
   for (const r of played) (byConsole[r.console] ||= []).push(r)
@@ -61,6 +61,12 @@ export async function castDuelVote(consoleId, gameAId, gameBId, winnerGameId, vo
   const [normA, normB] = gameAId < gameBId ? [gameAId, gameBId] : [gameBId, gameAId]
 
   if (isMockMode()) {
+    const existing = MOCK_DUEL_VOTES.find(v =>
+      v.voter_id === voterId && v.console === consoleId && v.game_a_id === normA && v.game_b_id === normB)
+    if (existing) {
+      existing.winner_game_id = winnerGameId
+      return existing
+    }
     const vote = {
       id: `mock-duel-${Date.now()}`, voter_id: voterId, console: consoleId,
       game_a_id: normA, game_b_id: normB, winner_game_id: winnerGameId,
@@ -70,9 +76,12 @@ export async function castDuelVote(consoleId, gameAId, gameBId, winnerGameId, vo
     return vote
   }
 
+  // Upsert (not insert) so re-voting on a past duel — after going back in the widget —
+  // overwrites the existing row instead of hitting duel_votes_unique_vote.
   const { data, error } = await supabase
     .from('duel_votes')
-    .insert({ console: consoleId, game_a_id: normA, game_b_id: normB, winner_game_id: winnerGameId })
+    .upsert({ voter_id: voterId, console: consoleId, game_a_id: normA, game_b_id: normB, winner_game_id: winnerGameId },
+      { onConflict: 'voter_id,console,game_a_id,game_b_id' })
     .select()
     .single()
   if (error) throw error

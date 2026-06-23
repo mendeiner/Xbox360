@@ -22,6 +22,14 @@ import { GBA_GAMES } from '../data/gba/games'
 import { COVERS as GBA_COVERS } from '../data/gba/covers_map'
 import { DLC_DATA as GBA_DLC } from '../data/gba/dlc_data'
 import { TRAILERS as GBA_TRAILERS } from '../data/gba/trailers_data'
+import { WII_GAMES } from '../data/wii/games'
+import { COVERS as WII_COVERS } from '../data/wii/covers_map'
+import { DLC_DATA as WII_DLC } from '../data/wii/dlc_data'
+import { TRAILERS as WII_TRAILERS } from '../data/wii/trailers_data'
+import { PS4_GAMES } from '../data/ps4/games'
+import { COVERS as PS4_COVERS } from '../data/ps4/covers_map'
+import { DLC_DATA as PS4_DLC } from '../data/ps4/dlc_data'
+import { TRAILERS as PS4_TRAILERS } from '../data/ps4/trailers_data'
 
 const XBOX360_SPECIAL = [
   { id: 'dl',      label: 'Com Download' },
@@ -33,6 +41,7 @@ const XBOX360_GROUPS = [
   {
     id: 'status', title: 'Status',
     filters: [
+      { id: 'jogando',      label: 'Jogando' },
       { id: 'joguei',       label: 'Joguei' },
       { id: 'zerado',       label: 'Zerado' },
       { id: 'cem_porcento', label: '100%' },
@@ -114,6 +123,7 @@ const PS2_GROUPS = [
   {
     id: 'status', title: 'Status',
     filters: [
+      { id: 'jogando',      label: 'Jogando' },
       { id: 'joguei',       label: 'Joguei' },
       { id: 'zerado',       label: 'Zerado' },
       { id: 'cem_porcento', label: '100%' },
@@ -173,10 +183,45 @@ const PS3_SPECIAL = [
   { id: 'online',  label: 'Online Multi' },
 ]
 
+const PS4_SPECIAL = []
+
+const PS4_GROUPS = [
+  {
+    id: 'status', title: 'Status',
+    filters: [
+      { id: 'jogando',      label: 'Jogando' },
+      { id: 'joguei',       label: 'Joguei' },
+      { id: 'zerado',       label: 'Zerado' },
+      { id: 'cem_porcento', label: '100%' },
+      { id: 'quero',        label: 'Quero Jogar' },
+    ],
+  },
+  {
+    id: 'genero', title: 'Gênero',
+    filters: [
+      { id: 'Ação',       label: 'Ação' },
+      { id: 'Aventura',   label: 'Aventura' },
+      { id: 'RPG',        label: 'RPG' },
+      { id: 'FPS',        label: 'FPS' },
+      { id: 'Luta',       label: 'Luta' },
+      { id: 'Plataforma', label: 'Plataforma' },
+      { id: 'Simulação',  label: 'Simulação' },
+      { id: 'Estratégia', label: 'Estratégia' },
+      { id: 'Puzzle',     label: 'Puzzle' },
+      { id: 'Terror',     label: 'Terror' },
+      { id: 'Arcade',     label: 'Arcade' },
+      { id: 'Corrida',    label: 'Corrida' },
+      { id: 'Esportes',   label: 'Esportes' },
+      { id: 'Família',    label: 'Família' },
+    ],
+  },
+]
+
 const PS3_GROUPS = [
   {
     id: 'status', title: 'Status',
     filters: [
+      { id: 'jogando',      label: 'Jogando' },
       { id: 'joguei',       label: 'Joguei' },
       { id: 'zerado',       label: 'Zerado' },
       { id: 'cem_porcento', label: '100%' },
@@ -253,6 +298,7 @@ const SNES_GROUPS = [
   {
     id: 'status', title: 'Status',
     filters: [
+      { id: 'jogando',      label: 'Jogando' },
       { id: 'joguei',       label: 'Joguei' },
       { id: 'zerado',       label: 'Zerado' },
       { id: 'cem_porcento', label: '100%' },
@@ -305,6 +351,7 @@ const NSW_GROUPS = [
   {
     id: 'status', title: 'Status',
     filters: [
+      { id: 'jogando',      label: 'Jogando' },
       { id: 'joguei',       label: 'Joguei' },
       { id: 'zerado',       label: 'Zerado' },
       { id: 'cem_porcento', label: '100%' },
@@ -348,6 +395,7 @@ const GBA_GROUPS = [
   {
     id: 'status', title: 'Status',
     filters: [
+      { id: 'jogando',      label: 'Jogando' },
       { id: 'joguei',       label: 'Joguei' },
       { id: 'zerado',       label: 'Zerado' },
       { id: 'cem_porcento', label: '100%' },
@@ -375,6 +423,71 @@ const GBA_GROUPS = [
       { id: 'Tabuleiro',     label: 'Tabuleiro' },
       { id: 'Cartas',        label: 'Cartas' },
       { id: 'Educativo',     label: 'Educativo' },
+    ],
+  },
+]
+
+const WII_SPECIAL = [
+  { id: 'dl',         label: 'Com Download' },
+  { id: 'localMP',    label: 'Local Multi' },
+  { id: 'online',     label: 'Online Multi' },
+  { id: 'motionPlus', label: 'Motion Plus' },
+]
+
+const WII_GROUPS = [
+  {
+    id: 'status', title: 'Status',
+    filters: [
+      { id: 'jogando',      label: 'Jogando' },
+      { id: 'joguei',       label: 'Joguei' },
+      { id: 'zerado',       label: 'Zerado' },
+      { id: 'cem_porcento', label: '100%' },
+      { id: 'quero',        label: 'Quero Jogar' },
+    ],
+  },
+  {
+    id: 'tipo', title: 'Tipo',
+    filters: [
+      { id: 'retail',           label: 'Retail' },
+      { id: 'wiiware',          label: 'WiiWare' },
+      { id: 'virtual_console',  label: 'Virtual Console' },
+    ],
+  },
+  {
+    id: 'genero', title: 'Gênero',
+    filters: [
+      { id: 'Ação',          label: 'Ação' },
+      { id: 'Aventura',      label: 'Aventura' },
+      { id: 'Plataforma',    label: 'Plataforma' },
+      { id: 'Arcade',        label: 'Arcade' },
+      { id: 'RPG',           label: 'RPG' },
+      { id: 'FPS',           label: 'FPS' },
+      { id: 'Tiro',          label: 'Tiro' },
+      { id: "Beat 'em up",   label: "Beat 'em up" },
+      { id: 'Luta',          label: 'Luta' },
+      { id: 'Puzzle',        label: 'Puzzle' },
+      { id: 'Estratégia',    label: 'Estratégia' },
+      { id: 'Simulação',     label: 'Simulação' },
+      { id: 'Terror',        label: 'Terror' },
+      { id: 'Música',        label: 'Música' },
+    ],
+  },
+  {
+    id: 'esportes', title: 'Esportes',
+    filters: [
+      { id: 'Esportes',           label: 'Esportes (geral)' },
+      { id: 'Futebol',            label: 'Futebol' },
+      { id: 'Futebol Americano',  label: 'Fut. Americano' },
+      { id: 'Basquete',           label: 'Basquete' },
+      { id: 'Boxe',               label: 'Boxe' },
+      { id: 'Luta Livre',         label: 'Luta Livre' },
+      { id: 'Hóquei',             label: 'Hóquei' },
+      { id: 'Baseball',           label: 'Baseball' },
+      { id: 'Corrida',            label: 'Corrida' },
+      { id: 'Skate',              label: 'Skate' },
+      { id: 'Neve',               label: 'Neve' },
+      { id: 'Golfe',              label: 'Golfe' },
+      { id: 'Tênis',              label: 'Tênis' },
     ],
   },
 ]
@@ -634,11 +747,53 @@ export const CONSOLES = {
     filterGroups: PS3_GROUPS,
   },
 
+  ps4: {
+    id: 'ps4',
+    label: 'PS4',
+    accentColor: '#003791',
+    coverPrefix: '/covers/ps4',
+    // RAWG's background_image is a full-bleed promo shot rather than a box scan (GameTDB
+    // doesn't support PS4, so there's no box-art source the way PS3 has SvenGDK/PSMT-Covers),
+    // same situation as NSW -- centered instead of right-anchored.
+    coverAlign: 'center center',
+    ready: true,
+
+    games: PS4_GAMES,
+    // game id -> RAWG `background_image` URL at catalog-build time; cover *files* are saved
+    // and looked up by game id (`coversById` below), same convention as PS2/NSW.
+    covers: PS4_COVERS,
+    coversById: true,
+    dlc: PS4_DLC,
+    trailers: PS4_TRAILERS,
+
+    // No archive.org download research for PS4 yet -- a real, documented gap, not a bug.
+    partIds: {},
+    partNames: {},
+    dlTypeLabel() { return 'Download' },
+
+    // GameTDB (PS3's disc/PSN source) doesn't cover PS4, and no other source reliably
+    // distinguishes physical-disc vs digital-only releases across the full catalog, so
+    // (unlike PS3) there's no type split here -- every game uses a single 'retail' value,
+    // same convention as PS2/SNES/NSW.
+    types: ['retail'],
+    typeMap: {
+      retail: ['Retail', 'text-blue-400 bg-blue-400/10 border-blue-400/20'],
+    },
+
+    trailerSearchSuffix: 'PS4 trailer',
+    trailerCacheKey: 'ps4_trailers',
+
+    specialFilters: PS4_SPECIAL,
+    filterGroups: PS4_GROUPS,
+  },
+
   snes: {
     id: 'snes',
     label: 'SNES',
     accentColor: '#E60012',
     coverPrefix: '/covers/snes',
+    // Cart label scan (front+spine), landscape -- see coverAspect doc on the `gba` entry below.
+    coverAspect: 'landscape',
     ready: true,
 
     games: SNES_GAMES,
@@ -671,6 +826,9 @@ export const CONSOLES = {
     label: 'Switch',
     accentColor: '#E4000F',
     coverPrefix: '/covers/nsw',
+    // Portrait like xbox360/ps2/ps3, but RAWG's background_image is a full-bleed promo shot
+    // rather than a box scan, so it's centered instead of right-anchored like the others.
+    coverAlign: 'center center',
     ready: true,
 
     games: NSW_GAMES,
@@ -707,6 +865,14 @@ export const CONSOLES = {
     label: 'GBA',
     accentColor: '#7B2D8E',
     coverPrefix: '/covers/gba',
+    // Cover shape, read by GameCard/GameModal to size the cover slot and pick object-fit
+    // instead of hardcoding a console check in those shared components:
+    //   'portrait' (default, omit the field) -- disc/box case art, e.g. xbox360/ps2/ps3.
+    //   'landscape' -- cart label scan (front+spine), e.g. snes.
+    //   'square'    -- cart label scan only, e.g. libretro-thumbnails' GBA Named_Boxarts.
+    // 'square'/'landscape' use object-contain (full scan shown, sizes vary slightly) while
+    // 'portrait' uses object-cover (consistent box-case proportions, cropping is fine).
+    coverAspect: 'square',
     ready: true,
 
     games: GBA_GAMES,
@@ -737,6 +903,57 @@ export const CONSOLES = {
 
     specialFilters: GBA_SPECIAL,
     filterGroups: GBA_GROUPS,
+  },
+
+  wii: {
+    id: 'wii',
+    label: 'Wii',
+    accentColor: '#1492E6',
+    coverPrefix: '/covers/wii',
+    ready: true,
+
+    games: WII_GAMES,
+    // game id -> libretro-thumbnails Named_Boxarts filename; cover *files* are saved and
+    // looked up by game id (`coversById` below), same convention as PS2/SNES/NSW/GBA.
+    // GameTDB's own art server (the originally planned source) became unreachable mid-pipeline
+    // and never recovered in-session, so covers were sourced from this GitHub mirror instead.
+    covers: WII_COVERS,
+    coversById: true,
+    dlc: WII_DLC,
+    trailers: WII_TRAILERS,
+
+    // Confirmed via archive.org metadata API: uploader arquivista.exe@gmail.com's Redump USA
+    // collection, split into part-2 (L-S) and part-3 (T-Z) RVZ dumps -- no US part-1 (#-K) was
+    // ever uploaded (only a part-1-EU exists), so titles A-K have no confirmed retail `dl`, a
+    // real gap like PS2's missing S-Z. WiiWare/Virtual Console digital titles come from a
+    // separate "Nintendo - Wii-Ware" collection (w1).
+    partIds: {
+      p2: 'Wii-p2-US-Arquivista',
+      p3: 'Wii-p3-US-Arquivista',
+      w1: 'CentralArquivista-NintendoWiiWare',
+    },
+    partNames: {
+      p2: 'Redump USA (L-S)',
+      p3: 'Redump USA (T-Z)',
+      w1: 'WiiWare / Virtual Console',
+    },
+    dlTypeLabel() { return 'Download' },
+
+    // WiiWare and Virtual Console are both Wii Shop Channel digital purchases (GameTDB tracks
+    // them as separate `type` values since VC titles are emulated re-releases of pre-Wii
+    // games, not native Wii software, unlike a single digital storefront split).
+    types: ['retail', 'wiiware', 'virtual_console'],
+    typeMap: {
+      retail:           ['Retail',           'text-blue-400  bg-blue-400/10  border-blue-400/20' ],
+      wiiware:          ['WiiWare',          'text-cyan-400  bg-cyan-400/10  border-cyan-400/20' ],
+      virtual_console:  ['Virtual Console',  'text-amber-400 bg-amber-400/10 border-amber-400/20'],
+    },
+
+    trailerSearchSuffix: 'Wii trailer',
+    trailerCacheKey: 'wii_trailers',
+
+    specialFilters: WII_SPECIAL,
+    filterGroups: WII_GROUPS,
   },
 }
 

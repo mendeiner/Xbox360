@@ -10,11 +10,20 @@ const YT_KEY = 'AIzaSyC0roJ2MgVzcd1PAnCDImt8BI9eruOdS-c'
 
 // 'joguei' uses the console's accent color (set via inline style) instead of a fixed class.
 const STATUS_PILLS = [
+  { key:'jogando',      label:'Jogando', on:'bg-teal-700   text-white border-teal-700',  off:'border-[#2a2a2a] bg-[#1a1a1a] text-gray-400 hover:border-gray-500' },
   { key:'joguei',       label:'Joguei', on:'text-white',                                  off:'border-[#2a2a2a] bg-[#1a1a1a] text-gray-400 hover:border-gray-500' },
   { key:'zerado',       label:'Zerado', on:'bg-blue-700   text-white border-blue-700',   off:'border-[#2a2a2a] bg-[#1a1a1a] text-gray-400 hover:border-gray-500' },
   { key:'cem_porcento', label:'100%',   on:'bg-yellow-500 text-black border-yellow-500', off:'border-[#2a2a2a] bg-[#1a1a1a] text-gray-400 hover:border-gray-500' },
   { key:'quero',        label:'Quero',  on:'bg-purple-700 text-white border-purple-700', off:'border-[#2a2a2a] bg-[#1a1a1a] text-gray-400 hover:border-gray-500' },
 ]
+
+// Turning one of these on asks "when?" with a year picker instead of saving immediately.
+const YEAR_KEYS = ['joguei', 'zerado', 'cem_porcento']
+const YEAR_QUESTION = {
+  joguei: 'Quando você jogou?',
+  zerado: 'Quando você zerou?',
+  cem_porcento: 'Quando completou 100%?',
+}
 
 async function searchYouTube(title, suffix) {
   try {
@@ -54,6 +63,7 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
   const [videoId,        setVideoId]        = useState(null)
 
   const [dlcOpen, setDlcOpen] = useState(false)
+  const [pendingKey, setPendingKey] = useState(null)
 
   const trailerCache = useRef(loadTrailerCache(console_))
   const startY = useRef(0)
@@ -66,6 +76,7 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
     setTrailerError(false)
     setVideoId(null)
     setDlcOpen(false)
+    setPendingKey(null)
 
     const cached = trailerCache.current[game.id]
     if (cached) { setVideoId(cached); return }
@@ -85,6 +96,13 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
 
   useEffect(() => { setLocalStatus(status) }, [status])
 
+  // The year question is optional and never blocks the save — auto-dismiss it after 10s of no answer.
+  useEffect(() => {
+    if (!pendingKey) return
+    const timer = setTimeout(() => setPendingKey(null), 10000)
+    return () => clearTimeout(timer)
+  }, [pendingKey])
+
   useEffect(() => {
     const fn = e => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', fn)
@@ -92,11 +110,16 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
   }, [onClose])
 
   const cover     = coverSrc(game, console_)
+  // Same coverAspect/coverAlign-driven sizing as GameCard.jsx -- see the doc comment on the
+  // `gba` registry entry for the full list of values.
+  const coverAspect = console_.coverAspect || 'portrait'
+  const coverFitCls = coverAspect === 'portrait' ? 'object-cover' : 'object-contain'
+  const coverAlign  = console_.coverAlign || (coverAspect === 'landscape' ? 'left center' : coverAspect === 'square' ? 'center center' : 'right center')
   const dlcList   = console_.dlc[game.id] || []
   const dlEntries = buildDlEntries(game.dl)
   const firstPart = game.dl?.part || game.dl?.discs?.[0]?.part
 
-  const PROGRESS = ['quero', 'joguei', 'zerado', 'cem_porcento']
+  const PROGRESS = ['quero', 'jogando', 'joguei', 'zerado', 'cem_porcento']
 
   async function handlePill(key) {
     if (!user) return
@@ -110,6 +133,7 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
         if (k !== key) updated[k] = false
       }
     }
+    if (!next && YEAR_KEYS.includes(key)) updated[`${key}_year`] = null
 
     setSaving(key)
     setLocalStatus(updated)
@@ -119,21 +143,49 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
           if (k !== key && localStatus[k]) {
             await setFlag(consoleId, game.id, k, false)
             onStatusChange?.(game.id, k, false)
+            if (YEAR_KEYS.includes(k)) {
+              await setFlag(consoleId, game.id, `${k}_year`, null)
+              onStatusChange?.(game.id, `${k}_year`, null)
+            }
           }
         }
       }
       await setFlag(consoleId, game.id, key, next)
       onStatusChange?.(game.id, key, next)
+      if (!next && YEAR_KEYS.includes(key)) {
+        await setFlag(consoleId, game.id, `${key}_year`, null)
+        onStatusChange?.(game.id, `${key}_year`, null)
+      }
       checkAndUnlockAchievements(user.id).catch(() => {})
 
       if (next && SHAREABLE.includes(key)) {
         addToBatch(consoleId, game.id, key, rating || null)
       }
+
+      // Status is already saved at this point — asking "when?" is just an optional follow-up.
+      if (next && YEAR_KEYS.includes(key)) setPendingKey(key)
     } catch {
       setLocalStatus(prev)
     } finally {
       setSaving(null)
     }
+  }
+
+  async function confirmYear(key, year) {
+    const value = year === 'unknown' ? null : Number(year)
+    setLocalStatus(s => ({ ...s, [`${key}_year`]: value }))
+    setPendingKey(null)
+    try {
+      await setFlag(consoleId, game.id, `${key}_year`, value)
+      onStatusChange?.(game.id, `${key}_year`, value)
+    } catch { /* non-critical, leave it unset */ }
+  }
+
+  function yearOptionsFor() {
+    const from = game.year || 1990
+    const years = []
+    for (let y = new Date().getFullYear(); y >= from; y--) years.push(y)
+    return years
   }
 
   async function handleRating(val) {
@@ -167,11 +219,12 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
 
         {/* Header */}
         <div className="flex gap-4 px-5 pt-4 pb-4 sm:pt-7 sm:px-7">
-          <div className="flex-shrink-0 w-[80px] h-[120px] sm:w-[120px] sm:h-[180px] rounded-lg sm:rounded-xl bg-[#222] overflow-hidden relative">
+          <div className={`flex-shrink-0 rounded-lg sm:rounded-xl bg-[#222] overflow-hidden relative
+            ${coverAspect === 'square' ? 'w-[100px] h-[100px] sm:w-[150px] sm:h-[150px]' : 'w-[80px] h-[120px] sm:w-[120px] sm:h-[180px]'}`}>
             {cover && (
               <img src={cover} alt={game.title}
-                className="absolute inset-0 w-full h-full object-cover rounded-r-lg sm:rounded-r-xl"
-                style={{ objectPosition: consoleId === 'snes' ? 'left center' : consoleId === 'nsw' ? 'center center' : 'right center' }}
+                className={`absolute inset-0 w-full h-full rounded-r-lg sm:rounded-r-xl ${coverFitCls}`}
+                style={{ objectPosition: coverAlign }}
                 onError={e => { e.target.style.display = 'none' }} />
             )}
           </div>
@@ -211,23 +264,62 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
 
           {/* Status pills + star rating, side by side */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-6">
-            <div>
+            <div className="min-w-0">
               <SectionLabel>Status</SectionLabel>
-              <div className="flex gap-2 flex-wrap mt-2">
-                {STATUS_PILLS.map(p => (
+              {pendingKey ? (
+                <div className="mt-2 w-full sm:w-[280px]">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[13px] text-gray-200 font-semibold">{YEAR_QUESTION[pendingKey]}</span>
+                    <button
+                      onClick={() => setPendingKey(null)}
+                      className="shrink-0 w-5 h-5 rounded-full bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white text-[12px] leading-none flex items-center justify-center"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1 max-h-[150px] overflow-y-auto p-1 rounded-lg bg-[#101010] border border-[#2a2a2a]">
+                    {yearOptionsFor().map(y => (
+                      <button
+                        key={y}
+                        onClick={() => confirmYear(pendingKey, y)}
+                        className="rounded-md text-[12px] font-bold py-1.5 text-gray-200 hover:text-white transition-all"
+                        style={{ background: 'transparent' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = accentRgba(console_, 0.45, 1) }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                      >
+                        {y}
+                      </button>
+                    ))}
+                  </div>
                   <button
-                    key={p.key}
-                    onClick={() => handlePill(p.key)}
-                    disabled={!user || saving === p.key}
-                    style={p.key === 'joguei' && localStatus.joguei ? { background: console_.accentColor, borderColor: console_.accentColor } : undefined}
-                    className={`px-4 py-1.5 rounded-full text-[12px] font-bold border transition-all
-                      ${localStatus[p.key] ? p.on : p.off}
-                      ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    onClick={() => confirmYear(pendingKey, 'unknown')}
+                    className="mt-1.5 w-full rounded-md text-[12px] italic py-1.5 text-gray-400 hover:text-white hover:bg-white/10 transition-all border border-[#2a2a2a]"
                   >
-                    {saving === p.key ? '···' : p.label}
+                    Não lembro
                   </button>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="flex gap-2 flex-wrap mt-2">
+                  {STATUS_PILLS.map(p => (
+                    <button
+                      key={p.key}
+                      onClick={() => handlePill(p.key)}
+                      disabled={!user || saving === p.key}
+                      style={p.key === 'joguei' && localStatus.joguei ? { background: console_.accentColor, borderColor: console_.accentColor } : undefined}
+                      className={`px-4 py-1.5 rounded-full text-[12px] font-bold border transition-all
+                        ${localStatus[p.key] ? p.on : p.off}
+                        ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      {saving === p.key ? '···' : p.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!pendingKey && YEAR_KEYS.map(k => localStatus[k] && localStatus[`${k}_year`] !== undefined && (
+                <p key={k} className="text-[11px] text-gray-500 mt-1.5">
+                  {localStatus[`${k}_year`] == null ? 'Ano não informado' : `Ano: ${localStatus[`${k}_year`]}`}
+                </p>
+              ))}
             </div>
 
             <div className="sm:flex-shrink-0">

@@ -11,7 +11,7 @@ import { readyConsoles } from '../consoles/registry'
 import { useAuth } from '../contexts/AuthContext'
 import { getProfileByUsername, updateAvatar } from '../lib/db'
 import { getProfileStats, getAllStatusRows, getTasteProfile, getConsoleCompletion } from '../lib/collection'
-import { ACHIEVEMENTS, getUserAchievements, checkAndUnlockAchievements, getFeedPosts, ACTION_LABEL } from '../lib/social'
+import { ACHIEVEMENTS, getUserAchievements, getAchievementsProgress, checkAndUnlockAchievements, getFeedPosts, ACTION_LABEL } from '../lib/social'
 import { getClosedPollsByCreator, getPollResults } from '../lib/polls'
 import { getUserDuelBrackets } from '../lib/duels'
 
@@ -35,7 +35,7 @@ function buildShelves(rows) {
   return readyConsoles()
     .map(console_ => {
       const consoleRows = byConsole[console_.id] || []
-      const marked = consoleRows.filter(r => r.joguei || r.zerado || r.cem_porcento || r.quero)
+      const marked = consoleRows.filter(r => r.joguei || r.zerado || r.cem_porcento || r.quero || r.jogando)
       if (!marked.length) return null
 
       const games = marked
@@ -63,6 +63,7 @@ export default function Profile() {
   const [profile, setProfile] = useState(null)
   const [stats, setStats] = useState(null)
   const [unlocked, setUnlocked] = useState([])
+  const [progress, setProgress] = useState({})
   const [genres, setGenres] = useState([])
   const [shelves, setShelves] = useState([])
   const [recentPosts, setRecentPosts] = useState([])
@@ -83,17 +84,19 @@ export default function Profile() {
       if (!alive || !p) { setLoading(false); return }
       setProfile(p)
 
-      const [s, rows, unlockedRows, taste] = await Promise.all([
+      const [s, rows, unlockedRows, taste, progressRows] = await Promise.all([
         getProfileStats(p.id),
         getAllStatusRows(p.id),
         getUserAchievements(p.id),
         getTasteProfile(p.id),
+        getAchievementsProgress(p.id),
       ])
       if (!alive) return
       setStats(s)
       setUnlocked(unlockedRows.map(u => u.achievement_id))
       setGenres(taste)
       setShelves(buildShelves(rows))
+      setProgress(Object.fromEntries(progressRows.map(r => [r.id, r])))
 
       try {
         const posts = await getFeedPosts([p.id], { limit: 8 })
@@ -114,7 +117,7 @@ export default function Profile() {
       } catch { /* no duel votes yet, ignore */ }
 
       setLoading(false)
-    })
+    }).catch(() => { if (alive) setLoading(false) })
     return () => { alive = false }
   }, [username])
 
@@ -205,6 +208,7 @@ export default function Profile() {
         {/* Stats row — plain bold inline numbers, no boxes */}
         {stats && (
           <div className="flex items-center gap-x-6 gap-y-1 flex-wrap mb-10 pb-6 border-b border-[#222b4a]">
+            <Stat label="Jogando" value={stats.jogando} />
             <Stat label="Joguei" value={stats.joguei} />
             <Stat label="Zerado" value={stats.zerado} />
             <Stat label="100%" value={stats.cem_porcento} highlight />
@@ -293,7 +297,7 @@ export default function Profile() {
         {tab === 'achievements' && (
           <section className="flex flex-wrap gap-2">
             {ACHIEVEMENTS.map(a => (
-              <AchievementBadge key={a.id} achievement={a} unlocked={unlocked.includes(a.id)} />
+              <AchievementBadge key={a.id} achievement={a} unlocked={unlocked.includes(a.id)} progress={progress[a.id]} />
             ))}
           </section>
         )}

@@ -22,6 +22,7 @@ create table if not exists public.game_statuses (
   zerado        boolean default false,
   cem_porcento  boolean default false,
   quero         boolean default false,
+  jogando       boolean default false,
   rating        numeric(2,1) check (rating >= 0.5 and rating <= 5.0),
   primary key (user_id, console, game_id)
 );
@@ -185,7 +186,7 @@ create table if not exists public.feed_posts (
   user_id     uuid not null default auth.uid() references public.profiles(id) on delete cascade,
   console     text,                      -- null when action = 'added_games'
   game_id     integer,                   -- null when action = 'added_games'
-  action      text not null check (action in ('joguei','zerado','cem_porcento','quero','added_games')),
+  action      text not null check (action in ('joguei','zerado','cem_porcento','quero','jogando','added_games')),
   rating      numeric(2,1),
   items       jsonb,                     -- only for action='added_games': [{console, game_id, action, rating}]
   created_at  timestamptz default now()
@@ -490,3 +491,18 @@ create policy "avatars_own_update" on storage.objects for update
   to authenticated using (bucket_id = 'avatars' and owner = auth.uid());
 
 alter table public.profiles add column if not exists avatar_url text;
+
+-- ── "Jogando" status (currently playing) ──────────────────────
+-- Added after initial launch — these alters backfill the column/constraint on a
+-- database that already ran this file once (the `create table` block above only
+-- helps a brand-new project).
+alter table public.game_statuses add column if not exists jogando boolean default false;
+
+alter table public.feed_posts drop constraint if exists feed_posts_action_check;
+alter table public.feed_posts add constraint feed_posts_action_check
+  check (action in ('joguei','zerado','cem_porcento','quero','jogando','added_games'));
+
+-- ── "When did you play it?" year, asked when joguei/zerado/cem_porcento turns on ──
+alter table public.game_statuses add column if not exists joguei_year integer;
+alter table public.game_statuses add column if not exists zerado_year integer;
+alter table public.game_statuses add column if not exists cem_porcento_year integer;

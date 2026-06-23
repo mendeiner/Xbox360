@@ -20,9 +20,14 @@ export default {
           '0%':   { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        toastIn: {
+          '0%':   { opacity: '0', transform: 'translateX(24px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
       },
       animation: {
         'fade-up': 'fadeUp 0.6s cubic-bezier(0.25,1,0.5,1) both',
+        'toast-in': 'toastIn 0.25s ease-out both',
       },
     },
   },

@@ -8,6 +8,7 @@ export function gameHas(console_, game, f, statuses) {
   if (f === 'zerado')       return !!statuses[game.id]?.zerado
   if (f === 'cem_porcento') return !!statuses[game.id]?.cem_porcento
   if (f === 'quero')        return !!statuses[game.id]?.quero
+  if (f === 'jogando')      return !!statuses[game.id]?.jogando
   if (f === 'dl')           return !!game.dl
   if (f === 'localMP')      return game.localMP === true
   if (f === 'online')       return game.online === true
@@ -102,7 +103,7 @@ export function useConsolePage(consoleId) {
   }, [console_, search, inc, exc, statuses])
 
   const collectionGames = useMemo(() =>
-    console_.games.filter(g => { const s = statuses[g.id]; return s && (s.joguei || s.zerado || s.cem_porcento || s.quero) })
+    console_.games.filter(g => { const s = statuses[g.id]; return s && (s.joguei || s.zerado || s.cem_porcento || s.quero || s.jogando) })
   , [console_, statuses])
 
   const stats = useMemo(() => {
@@ -112,6 +113,7 @@ export function useConsolePage(consoleId) {
       zerado:       vals.filter(s => s.zerado).length,
       cem_porcento: vals.filter(s => s.cem_porcento).length,
       quero:        vals.filter(s => s.quero).length,
+      jogando:      vals.filter(s => s.jogando).length,
       dl:           console_.games.filter(g => g.dl).length,
     }
   }, [console_, statuses])

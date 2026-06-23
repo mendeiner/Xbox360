@@ -62,11 +62,12 @@ export async function getConsoleCounts(console_name, userId) {
       joguei: rows.filter(r => r.joguei).length,
       zerado: rows.filter(r => r.zerado).length,
       cem_porcento: rows.filter(r => r.cem_porcento).length,
+      jogando: rows.filter(r => r.jogando).length,
     }
   }
   const { data, error } = await supabase
     .from('game_statuses')
-    .select('joguei, zerado, cem_porcento')
+    .select('joguei, zerado, cem_porcento, jogando')
     .eq('console', console_name)
     .eq('user_id', userId)
   if (error) throw error
@@ -74,6 +75,7 @@ export async function getConsoleCounts(console_name, userId) {
     joguei:      data.filter(r => r.joguei).length,
     zerado:      data.filter(r => r.zerado).length,
     cem_porcento: data.filter(r => r.cem_porcento).length,
+    jogando:     data.filter(r => r.jogando).length,
   }
 }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getConsole } from '../../consoles/registry'
 import { coverSrc, dlLink, typeBadge, accentRgba, accentLight, metacriticCls } from '../../consoles/dl'
 import { setFlag } from '../../lib/db'
@@ -8,11 +8,20 @@ import { useLibraryAddBatch } from '../../contexts/LibraryAddBatchContext'
 
 // 'joguei' uses the console's accent color (set via inline style) instead of a fixed class.
 const STATUS_PILLS = [
+  { key: 'jogando',      label: 'Jogando', active: 'bg-teal-600 text-white',     inactive: 'bg-black/50 text-gray-300 hover:bg-white/20' },
   { key: 'joguei',       label: 'Joguei', active: 'text-white',                 inactive: 'bg-black/50 text-gray-300 hover:bg-white/20' },
   { key: 'zerado',       label: 'Zerado', active: 'bg-blue-600 text-white',     inactive: 'bg-black/50 text-gray-300 hover:bg-white/20' },
   { key: 'cem_porcento', label: '100%',   active: 'bg-yellow-500 text-black',   inactive: 'bg-black/50 text-gray-300 hover:bg-white/20' },
   { key: 'quero',        label: 'Quero',  active: 'bg-purple-600 text-white',   inactive: 'bg-black/50 text-gray-300 hover:bg-white/20' },
 ]
+
+// Turning one of these on asks "when?" with a year picker instead of saving immediately.
+const YEAR_KEYS = ['joguei', 'zerado', 'cem_porcento']
+const YEAR_QUESTION = {
+  joguei: 'Quando você jogou?',
+  zerado: 'Quando você zerou?',
+  cem_porcento: 'Quando completou 100%?',
+}
 
 export default function GameCard({ game, status = {}, onStatusChange, onClick, gridMode = false, consoleId = 'xbox360' }) {
   const console_ = getConsole(consoleId)
@@ -20,21 +29,31 @@ export default function GameCard({ game, status = {}, onStatusChange, onClick, g
   const { addToBatch } = useLibraryAddBatch()
   const [hovered, setHovered] = useState(false)
   const [saving,  setSaving]  = useState(null)
+  const [pendingKey, setPendingKey] = useState(null)
 
   const cover    = coverSrc(game, console_)
   const dl       = dlLink(game.dl, console_.partIds)
   const [typeLabel, typeCls] = typeBadge(console_, game.type)
 
-  const PROGRESS = ['quero', 'joguei', 'zerado', 'cem_porcento']
+  const PROGRESS = ['quero', 'jogando', 'joguei', 'zerado', 'cem_porcento']
 
-  // SNES box art is landscape (front+spine scan), unlike the portrait case art used by
-  // the other consoles (NSW included, since its GameTDB box art is portrait) — widen the
-  // card so more of the actual image shows instead of cropping it into a portrait slot.
-  const isSnes = consoleId === 'snes'
-  const isNsw  = consoleId === 'nsw'
-  const cardWidthCls   = isSnes ? 'w-[190px]' : 'w-[130px]'
-  const coverSizeCls   = isSnes ? 'w-[190px] h-[140px]' : 'w-[130px] h-[190px]'
-  const coverAspectCls = isSnes ? 'aspect-[4/3]' : 'aspect-[2/3]'
+  // The year question is optional and never blocks the save — auto-dismiss it after 10s of no answer.
+  useEffect(() => {
+    if (!pendingKey) return
+    const timer = setTimeout(() => setPendingKey(null), 10000)
+    return () => clearTimeout(timer)
+  }, [pendingKey])
+
+  // Cover shape varies per console source (box/case art is portrait, cart label scans can be
+  // landscape or square) -- driven by `coverAspect`/`coverAlign` on the console's registry
+  // entry so a new console with an odd cover shape doesn't need a code change here, just a
+  // registry field (see the doc comment on the `gba` entry in registry.js for the full list).
+  const aspect = console_.coverAspect || 'portrait'
+  const cardWidthCls   = aspect === 'landscape' ? 'w-[190px]' : aspect === 'square' ? 'w-[150px]' : 'w-[130px]'
+  const coverSizeCls   = aspect === 'landscape' ? 'w-[190px] h-[140px]' : aspect === 'square' ? 'w-[150px] h-[150px]' : 'w-[130px] h-[190px]'
+  const coverAspectCls = aspect === 'landscape' ? 'aspect-[4/3]' : aspect === 'square' ? 'aspect-square' : 'aspect-[2/3]'
+  const coverFitCls    = aspect === 'portrait' ? 'object-cover' : 'object-contain'
+  const coverAlign     = console_.coverAlign || (aspect === 'landscape' ? 'left center' : aspect === 'square' ? 'center center' : 'right center')
 
   async function handlePill(e, key) {
     e.stopPropagation()
@@ -48,19 +67,51 @@ export default function GameCard({ game, status = {}, onStatusChange, onClick, g
           if (k !== key && status[k]) {
             await setFlag(consoleId, game.id, k, false)
             onStatusChange?.(game.id, k, false)
+            if (YEAR_KEYS.includes(k)) {
+              await setFlag(consoleId, game.id, `${k}_year`, null)
+              onStatusChange?.(game.id, `${k}_year`, null)
+            }
           }
         }
       }
       await setFlag(consoleId, game.id, key, next)
       onStatusChange?.(game.id, key, next)
+      if (!next && YEAR_KEYS.includes(key)) {
+        await setFlag(consoleId, game.id, `${key}_year`, null)
+        onStatusChange?.(game.id, `${key}_year`, null)
+      }
       checkAndUnlockAchievements(user.id).catch(() => {})
 
       if (next && SHAREABLE.includes(key)) {
         addToBatch(consoleId, game.id, key, status.rating ?? null)
       }
+
+      // Status is already saved at this point — asking "when?" is just an optional follow-up.
+      if (next && YEAR_KEYS.includes(key)) setPendingKey(key)
+    } catch (err) {
+      console.error(err)
     } finally {
       setSaving(null)
     }
+  }
+
+  async function confirmYear(e, key, year) {
+    e.stopPropagation()
+    const value = year === 'unknown' ? null : Number(year)
+    setPendingKey(null)
+    try {
+      await setFlag(consoleId, game.id, `${key}_year`, value)
+      onStatusChange?.(game.id, `${key}_year`, value)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  function yearOptionsFor() {
+    const from = game.year || 1990
+    const years = []
+    for (let y = new Date().getFullYear(); y >= from; y--) years.push(y)
+    return years
   }
 
   return (
@@ -70,7 +121,7 @@ export default function GameCard({ game, status = {}, onStatusChange, onClick, g
         ${gridMode ? '' : `flex-shrink-0 ${cardWidthCls}`}`}
       style={{ borderLeftColor: console_.accentColor }}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setPendingKey(null) }}
       onClick={() => onClick(game)}
     >
       {/* Cover image area */}
@@ -89,14 +140,15 @@ export default function GameCard({ game, status = {}, onStatusChange, onClick, g
             src={cover}
             alt={game.title}
             loading="lazy"
-            className="absolute inset-0 w-full h-full object-cover z-10"
-            style={{ objectPosition: isSnes ? 'left center' : isNsw ? 'center center' : 'right center' }}
+            className={`absolute inset-0 w-full h-full z-10 ${coverFitCls}`}
+            style={{ objectPosition: coverAlign }}
             onError={e => { e.target.style.display = 'none' }}
           />
         )}
 
         {/* Status badges — top left */}
         <div className="absolute top-1 left-1 flex flex-col gap-0.5 z-20">
+          {status.jogando      && <Dot color="bg-teal-700"   char="▷" />}
           {status.joguei       && <Dot style={{ background: console_.accentColor }} char="✓" />}
           {status.zerado       && <Dot color="bg-blue-700"   char="▶" />}
           {status.cem_porcento && <Dot color="bg-yellow-500" char="★" />}
@@ -124,19 +176,54 @@ export default function GameCard({ game, status = {}, onStatusChange, onClick, g
               className="absolute inset-0 pointer-events-none"
               style={{ background: `radial-gradient(circle at center, ${accentRgba(console_, 0.92, 0.18)} 0%, ${accentRgba(console_, 0.55, 0.18)} 55%, ${accentRgba(console_, 0, 0.18)} 85%)` }}
             />
-            {STATUS_PILLS.map(p => (
-              <button
-                key={p.key}
-                onClick={e => handlePill(e, p.key)}
-                disabled={!user || saving === p.key}
-                style={p.key === 'joguei' && status.joguei ? { background: console_.accentColor } : undefined}
-                className={`relative w-full rounded text-[10px] font-black py-0.5 transition-all
-                  ${status[p.key] ? p.active : p.inactive}
-                  ${(!user || saving === p.key) ? 'opacity-50' : ''}`}
-              >
-                {saving === p.key ? '···' : p.label}
-              </button>
-            ))}
+
+            {pendingKey ? (
+              <div className="relative z-10 w-full flex flex-col items-center gap-1">
+                <div className="w-full flex items-center justify-between">
+                  <span className="text-[9px] font-bold text-white leading-tight pr-1">{YEAR_QUESTION[pendingKey]}</span>
+                  <button
+                    onClick={e => { e.stopPropagation(); setPendingKey(null) }}
+                    className="shrink-0 w-4 h-4 rounded-full bg-black/50 text-gray-300 hover:bg-black/70 hover:text-white text-[10px] leading-none flex items-center justify-center"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="w-full max-h-[120px] overflow-y-auto rounded bg-black/60 backdrop-blur-sm border border-white/10 flex flex-col gap-[2px] p-1">
+                  {yearOptionsFor().map(y => (
+                    <button
+                      key={y}
+                      onClick={e => confirmYear(e, pendingKey, y)}
+                      className="w-full rounded text-[10px] font-bold py-0.5 text-gray-100 hover:text-white transition-all"
+                      style={{ background: 'transparent' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = accentRgba(console_, 0.45, 1) }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                    >
+                      {y}
+                    </button>
+                  ))}
+                  <button
+                    onClick={e => confirmYear(e, pendingKey, 'unknown')}
+                    className="w-full rounded text-[9px] italic py-0.5 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                  >
+                    Não lembro
+                  </button>
+                </div>
+              </div>
+            ) : (
+              STATUS_PILLS.map(p => (
+                <button
+                  key={p.key}
+                  onClick={e => handlePill(e, p.key)}
+                  disabled={!user || saving === p.key}
+                  style={p.key === 'joguei' && status.joguei ? { background: console_.accentColor } : undefined}
+                  className={`relative w-full rounded text-[10px] font-black py-0.5 transition-all
+                    ${status[p.key] ? p.active : p.inactive}
+                    ${(!user || saving === p.key) ? 'opacity-50' : ''}`}
+                >
+                  {saving === p.key ? '···' : p.label}
+                </button>
+              ))
+            )}
           </div>
         )}
       </div>

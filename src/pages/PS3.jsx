@@ -53,6 +53,7 @@ function MiniCard({ game, console: console_, status, onClick }) {
     status.cem_porcento ? 'border-yellow-500' :
     status.zerado       ? 'border-blue-600'   :
     status.joguei       ? 'border-[#00B4D8]'  :
+    status.jogando      ? 'border-teal-600'   :
     status.quero        ? 'border-purple-600' : 'border-transparent'
 
   return (
@@ -214,6 +215,7 @@ export default function PS3() {
       <div className="fixed bottom-0 left-0 right-0 md:left-[200px] bg-[#111] border-t-2 border-[#00B4D8] px-4 py-2.5 flex items-center gap-3 overflow-x-auto scrollbar-none z-20">
         <Stat color="bg-[#00B4D8]" label={`${stats.joguei} joguei`} />
         <Stat color="bg-blue-700"   label={`${stats.zerado} zerado`} />
+        <Stat color="bg-teal-600"   label={`${stats.jogando} jogando`} />
         <Stat color="bg-yellow-500" label={`${stats.cem_porcento} 100%`} />
         <Stat color="bg-purple-700" label={`${stats.quero} quero`} />
         <span className="ml-auto flex-shrink-0 text-[12px] font-semibold text-gray-500">

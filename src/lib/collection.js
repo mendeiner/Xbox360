@@ -16,7 +16,7 @@ export async function getCollection() {
     .map(([console_, statuses]) => {
       const games = console_.games.filter(g => {
         const s = statuses[g.id]
-        return s && (s.joguei || s.zerado || s.cem_porcento || s.quero)
+        return s && (s.joguei || s.zerado || s.cem_porcento || s.quero || s.jogando)
       })
       return { console: console_, games, statuses }
     })
@@ -54,7 +54,8 @@ export async function getProfileStats(userId) {
     zerado: rows.filter(r => r.zerado).length,
     cem_porcento: rows.filter(r => r.cem_porcento).length,
     quero: rows.filter(r => r.quero).length,
-    total: rows.filter(r => r.joguei || r.zerado || r.cem_porcento || r.quero).length,
+    jogando: rows.filter(r => r.jogando).length,
+    total: rows.filter(r => r.joguei || r.zerado || r.cem_porcento || r.quero || r.jogando).length,
   }
 }
 
@@ -64,7 +65,7 @@ export async function getTasteProfile(userId) {
   const rows = await getAllStatusRows(userId)
   const genreCounts = {}
   for (const r of rows) {
-    if (!(r.joguei || r.zerado || r.cem_porcento)) continue
+    if (!(r.joguei || r.zerado || r.cem_porcento || r.jogando)) continue
     const game = r._console.games.find(g => g.id === r.game_id)
     for (const genre of game?.genre || []) genreCounts[genre] = (genreCounts[genre] || 0) + 1
   }

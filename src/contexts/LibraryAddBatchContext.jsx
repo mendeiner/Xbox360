@@ -66,7 +66,13 @@ export function LibraryAddBatchProvider({ children }) {
   const addToBatch = useCallback((consoleId, gameId, action, rating = null) => {
     if (!user) return
     const items = readBatch(user.id)
-    items.push({ console: consoleId, game_id: gameId, action, rating })
+    const existing = items.find((item) => item.console === consoleId && item.game_id === gameId)
+    if (existing) {
+      existing.action = action
+      existing.rating = rating
+    } else {
+      items.push({ console: consoleId, game_id: gameId, action, rating })
+    }
     writeBatch(user.id, items)
   }, [user])
 

@@ -11,15 +11,18 @@ export default function DuelWidget({ userId }) {
   const [votedFor, setVotedFor] = useState(null)
   const [swapping, setSwapping] = useState(false)
   // Past {pair, votedFor} snapshots, most-recent last — lets the back arrow step
-  // through already-voted duels read-only, without re-fetching anything.
+  // through already-voted duels, without re-fetching anything.
   const [history, setHistory] = useState([])
+  // True while looking at a past duel via the back arrow — unlike the live pair, a past
+  // one stays clickable so the other option can be picked instead (re-casts the vote).
+  const [viewingPast, setViewingPast] = useState(false)
 
   // Doesn't touch `loading`/`votedFor` itself — only the initial mount-time call below
   // shows the loading-null state. Re-running this after a vote must keep the just-voted
   // pair (with its highlighted border) on screen until the next pair is ready to swap in,
   // instead of blanking the widget out in between.
   const loadPair = useCallback(() => {
-    return getNextDuelPair(userId).then(p => { setPair(p); setVotedFor(null); setLoading(false) })
+    return getNextDuelPair(userId).then(p => { setPair(p); setVotedFor(null); setViewingPast(false); setLoading(false) })
   }, [userId])
 
   useEffect(() => {
@@ -28,9 +31,14 @@ export default function DuelWidget({ userId }) {
     loadPair()
   }, [userId, loadPair])
 
+  // Voting on the live pair, or re-voting on a past one reached via the back arrow —
+  // either way, picking an option (even the one already chosen, on a past pair) re-casts
+  // the vote (upsert overwrites the row) and advances straight to a fresh next pair.
   function vote(winner) {
-    if (!pair || votedFor) return
+    if (!pair) return
+    if (votedFor === winner.id && !viewingPast) return
     setVotedFor(winner.id)
+    setViewingPast(false)
     setHistory(h => [...h, { pair, votedFor: winner.id }])
     // The insert doesn't gate the UI — it runs in the background while the next pair is
     // fetched in parallel (not after the dwell delay), so by the time the dwell ends the
@@ -43,6 +51,7 @@ export default function DuelWidget({ userId }) {
       Promise.all([nextPair, minOverlay]).then(([p]) => {
         setPair(p)
         setVotedFor(null)
+        setViewingPast(false)
         setSwapping(false)
       })
     }, 450)
@@ -54,6 +63,7 @@ export default function DuelWidget({ userId }) {
     setHistory(h => h.slice(0, -1))
     setPair(prev.pair)
     setVotedFor(prev.votedFor)
+    setViewingPast(true)
   }
 
   // No hero-empty-state for a secondary widget — if there's nothing to vote on yet
@@ -77,8 +87,8 @@ export default function DuelWidget({ userId }) {
       </div>
 
       <div className="relative grid grid-cols-2 gap-3">
-        <DuelOption game={pair.gameA} console_={pair.console} chosen={votedFor === pair.gameA.id} onVote={() => vote(pair.gameA)} disabled={!!votedFor} />
-        <DuelOption game={pair.gameB} console_={pair.console} chosen={votedFor === pair.gameB.id} onVote={() => vote(pair.gameB)} disabled={!!votedFor} />
+        <DuelOption game={pair.gameA} console_={pair.console} chosen={votedFor === pair.gameA.id} onVote={() => vote(pair.gameA)} disabled={!!votedFor && !viewingPast} />
+        <DuelOption game={pair.gameB} console_={pair.console} chosen={votedFor === pair.gameB.id} onVote={() => vote(pair.gameB)} disabled={!!votedFor && !viewingPast} />
         {swapping && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-gradient-to-br from-social/20 via-black/50 to-black/70 pointer-events-none">
             <div className="w-7 h-7 border-2 border-white/30 border-t-white rounded-full animate-spin" />
