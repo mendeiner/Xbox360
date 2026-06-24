@@ -1,57 +1,69 @@
-import { useState, useCallback } from 'react'
-import { getYearInReview } from '../../lib/collection'
+import { useState } from 'react'
 import { useHoverPopover } from '../../hooks/useHoverPopover'
-import YearRecapBody from './YearRecapBody'
+import YearRecapStory from './YearRecapStory'
 import CompatibilityBadge from './CompatibilityBadge'
 
-const recapCache = new Map() // friendId -> { year -> recap }, session-lived
-
-// Wraps a friend's avatar (passed as children) and shows that friend's yearly recap on
-// hover (desktop) or tap (mobile, since hover doesn't exist on touch) — the entry point
-// the friends Stories rail wires every avatar to. Also surfaces the taste-compatibility
-// score against this friend, since it's already a "this friend" context popover.
+// Wraps a friend's avatar (passed as children) and opens that friend's full Year Recap
+// story — the same arcade experience self gets, per the plan's Part F:
+//   - Desktop hover → a small anchored panel near the avatar, showing the complete story
+//     with full navigation (tap zones/swipe/keys). Clicking the panel's "⤢" expands it.
+//   - Click/tap (including touch, where hover doesn't exist) → the full-screen takeover.
+// The selected year is captured via `onYearChange` so it survives that anchored→fullscreen
+// escalation instead of resetting.
 export default function FriendRecapPopover({ friendId, friendName, viewerId, children }) {
-  const [year] = useState(new Date().getFullYear())
-  const [recap, setRecap] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [capturedYear, setCapturedYear] = useState(null)
 
-  const load = useCallback(() => {
-    const cached = recapCache.get(friendId)?.[year]
-    if (cached) { setRecap(cached); return }
-    setLoading(true)
-    getYearInReview(friendId, year).then(r => {
-      const byYear = recapCache.get(friendId) || {}
-      byYear[year] = r
-      recapCache.set(friendId, byYear)
-      setRecap(r)
-      setLoading(false)
-    })
-  }, [friendId, year])
+  const { open, setOpen, isTouch, handleMouseEnter, handleMouseLeave, handleClick } = useHoverPopover()
 
-  const { open, setOpen, isTouch, handleMouseEnter, handleMouseLeave, handleClick } = useHoverPopover({ onOpen: load })
+  function closeAll() {
+    setOpen(false)
+    setExpanded(false)
+  }
+
+  // Touch has no hover, so the tap that would open the anchored preview goes straight to the
+  // full takeover instead — this is the "separate page on mobile" feel.
+  if (isTouch) {
+    return (
+      <>
+        <button onClick={handleClick} className="block">{children}</button>
+        {open && (
+          <YearRecapStory userId={friendId} subject={friendName} variant="fullscreen" onClose={() => setOpen(false)} />
+        )}
+      </>
+    )
+  }
 
   return (
     <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <button onClick={handleClick} className="block">{children}</button>
 
-      {open && (
-        <>
-          {isTouch && (
-            <div className="fixed inset-0 z-20 bg-black/60" onClick={() => setOpen(false)} />
-          )}
+      {open && !expanded && (
+        <div className="absolute z-20 top-full mt-2 left-1/2 -translate-x-1/2 flex flex-col gap-2" style={{ width: YearRecapStory.ANCHORED_SIZE.width }}>
           <div
-            className={isTouch
-              ? 'fixed z-30 left-4 right-4 bottom-6 bg-social-ink border border-[#222b4a] p-5'
-              : 'absolute z-20 top-full mt-2 left-1/2 -translate-x-1/2 w-[300px] bg-social-ink border border-[#222b4a] p-5 shadow-xl'
-            }
+            className="rounded-md border border-[#222b4a] shadow-xl overflow-hidden bg-black"
+            style={{ width: YearRecapStory.ANCHORED_SIZE.width, height: YearRecapStory.ANCHORED_SIZE.height }}
           >
-            <p className="text-[11px] font-black uppercase tracking-[1.5px] text-social mb-3">
-              Retrospectiva de {friendName}
-            </p>
-            <YearRecapBody recap={recap} year={year} loading={loading} />
-            {viewerId && <CompatibilityBadge userId={viewerId} friendId={friendId} />}
+            <YearRecapStory
+              userId={friendId}
+              subject={friendName}
+              variant="anchored"
+              onYearChange={setCapturedYear}
+              onExpand={() => setExpanded(true)}
+            />
           </div>
-        </>
+          {viewerId && <CompatibilityBadge userId={viewerId} friendId={friendId} />}
+        </div>
+      )}
+
+      {expanded && (
+        <YearRecapStory
+          userId={friendId}
+          subject={friendName}
+          variant="fullscreen"
+          initialYear={capturedYear}
+          onClose={closeAll}
+        />
       )}
     </div>
   )

@@ -1,4 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+/* Used only for big numbers / short headline labels inside the Year Recap story (arcade
+   CRT theme) — never body copy, "Press Start 2P" is unreadable at body size. */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -34,4 +37,157 @@ input:-webkit-autofill {
 
 @media (prefers-reduced-motion: reduce) {
   .fade-in-up { animation: none; }
+}
+
+/* ── Year Recap Story: arcade CRT shell ───────────────────────────────────
+   Shared visual language for the full-screen retrospective story. Kept here
+   (not Tailwind utilities) because scanlines/vignette/glow are reused as a
+   layered background across every slide and are easiest to express as plain
+   CSS. Anchored to the app's own brand green (#107C10) rather than a generic
+   neon palette — see StorySlide.jsx for how these are applied. */
+
+.recap-pixel {
+  font-family: 'Press Start 2P', monospace;
+  letter-spacing: 0;
+}
+
+.recap-crt-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 1px,
+      rgba(0, 0, 0, 0.18) 2px
+    ),
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.recap-glow {
+  text-shadow:
+    0 0 4px currentColor,
+    0 0 12px currentColor,
+    0 0 28px currentColor;
+}
+
+@keyframes recap-channel-change {
+  0%   { transform: scaleY(1);    opacity: 1; }
+  45%  { transform: scaleY(0.02); opacity: 0.3; }
+  55%  { transform: scaleY(0.02); opacity: 0.3; }
+  100% { transform: scaleY(1);    opacity: 1; }
+}
+.recap-anim-channel-change { animation: recap-channel-change 280ms ease-out; }
+
+@keyframes recap-bar-fill {
+  from { width: 0%; }
+  to   { width: var(--recap-fill, 100%); }
+}
+.recap-anim-bar-fill { animation: recap-bar-fill 900ms ease-out forwards; }
+
+@keyframes recap-score-flash {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+.recap-anim-score-flash { animation: recap-score-flash 120ms steps(2) 4; }
+
+@keyframes recap-vs-clash {
+  0%   { transform: translateX(var(--recap-from, -24px)) scale(0.85); opacity: 0; }
+  60%  { transform: translateX(0) scale(1.08); opacity: 1; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+.recap-anim-vs-clash { animation: recap-vs-clash 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes recap-stamp-impact {
+  0%   { transform: scale(2.4) rotate(-8deg); opacity: 0; }
+  70%  { transform: scale(0.92) rotate(-2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-2deg); opacity: 1; }
+}
+.recap-anim-stamp-impact { animation: recap-stamp-impact 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes recap-iris-open {
+  from { clip-path: circle(0% at 50% 50%); }
+  to   { clip-path: circle(75% at 50% 50%); }
+}
+.recap-anim-iris-open { animation: recap-iris-open 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes recap-trophy-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  70%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.recap-anim-trophy-pop { animation: recap-trophy-pop 380ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes recap-shine-sweep {
+  from { transform: translateX(-150%) skewX(-15deg); }
+  to   { transform: translateX(250%) skewX(-15deg); }
+}
+.recap-anim-shine-sweep { animation: recap-shine-sweep 1100ms ease-out forwards; }
+
+@keyframes recap-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+.recap-anim-blink { animation: recap-blink 1s steps(1) infinite; }
+
+@keyframes recap-marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.recap-anim-marquee { animation: recap-marquee-scroll 30s linear infinite; }
+
+/* Part A scenery layer: confetti fall, dust drift, light-shaft breathing — the midground
+   "atmosphere" particles shared via recapScenery.jsx's <Particles>. */
+@keyframes recap-confetti-fall {
+  0%   { transform: translateY(-10%) rotate(0deg); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translateY(420%) rotate(340deg); opacity: 0; }
+}
+.recap-anim-confetti-fall { animation: recap-confetti-fall 2200ms ease-in forwards; }
+
+@keyframes recap-dust-drift {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translate(12px, -18px); opacity: 0; }
+}
+.recap-anim-dust-drift { animation: recap-dust-drift 4500ms ease-in-out infinite; }
+
+@keyframes recap-lightshaft {
+  0%, 100% { opacity: 0.08; }
+  50%      { opacity: 0.2; }
+}
+.recap-anim-lightshaft { animation: recap-lightshaft 2600ms ease-in-out infinite; }
+
+/* Round 2: the full-bleed CoverWall backdrop's continuous ambient motion — a slow
+   scale/translate breathe rather than a seamless scroll, so every slide is always moving
+   without needing perfect tile-loop math (recapScenery.jsx's <CoverWall>). */
+@keyframes recap-wall-drift {
+  0%   { transform: scale(1) translate(0, 0); }
+  50%  { transform: scale(1.07) translate(-1.5%, -1.5%); }
+  100% { transform: scale(1) translate(0, 0); }
+}
+.recap-anim-wall-drift { animation: recap-wall-drift 16s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .recap-anim-channel-change,
+  .recap-anim-bar-fill,
+  .recap-anim-score-flash,
+  .recap-anim-vs-clash,
+  .recap-anim-stamp-impact,
+  .recap-anim-iris-open,
+  .recap-anim-trophy-pop,
+  .recap-anim-shine-sweep,
+  .recap-anim-blink,
+  .recap-anim-marquee,
+  .recap-anim-confetti-fall,
+  .recap-anim-dust-drift,
+  .recap-anim-lightshaft,
+  .recap-anim-wall-drift {
+    animation: none !important;
+  }
+  .recap-anim-bar-fill { width: var(--recap-fill, 100%) !important; }
+  .recap-anim-iris-open { clip-path: circle(75% at 50% 50%) !important; }
+  .recap-anim-confetti-fall, .recap-anim-dust-drift { opacity: 0 !important; }
+  .recap-anim-lightshaft { opacity: 0.1 !important; }
 }

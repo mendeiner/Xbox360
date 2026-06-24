@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import Nav from '../components/Nav'
-import YearRecap from '../components/social/YearRecap'
+import YearRecapStory from '../components/social/YearRecapStory'
 import UsersList from '../components/social/UsersList'
 import ActivityFeed from '../components/social/ActivityFeed'
 import DuelWidget from '../components/social/DuelWidget'
@@ -72,6 +72,7 @@ export default function Home() {
   const [counts, setCounts]     = useState({})
   const [inviteCode, setInviteCode] = useState(null)
   const [copying, setCopying]   = useState(false)
+  const [recapOpen, setRecapOpen] = useState(false)
 
   // Small, separate fetch used only to sort the Stories rail by recency — the dominant
   // feed section below fetches/paginates its own posts via ActivityFeed/useActivityFeed.
@@ -175,11 +176,22 @@ export default function Home() {
 
       <main className="max-w-5xl mx-auto px-6 py-10">
 
-        {/* Header row — page title left, hover-only self-recap affordance right */}
+        {/* Header row — page title left, full-screen retrospective CTA right */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-[11px] font-black uppercase tracking-[1.5px] text-social">Feed dos Amigos</h1>
-          <YearRecap userId={user?.id} />
+          {user && (
+            <button
+              onClick={() => setRecapOpen(true)}
+              className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[1.5px] text-gray-300 hover:text-social transition-colors"
+            >
+              ✦ Ver Retrospectiva {new Date().getFullYear()}
+            </button>
+          )}
         </div>
+
+        {recapOpen && (
+          <YearRecapStory userId={user.id} subject="Você" onClose={() => setRecapOpen(false)} />
+        )}
 
         {/* Friends on the left, dominant infinite feed on the right */}
         <div className="grid lg:grid-cols-[220px_1fr] gap-6 mb-12">

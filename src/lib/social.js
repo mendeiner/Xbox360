@@ -8,7 +8,7 @@ import {
 } from './mockSocialData'
 
 // achievement_id -> static def, used to attach { achievement } onto unlock rows for rendering.
-function achievementById(id) {
+export function achievementById(id) {
   return ACHIEVEMENTS.find(a => a.id === id) || null
 }
 
