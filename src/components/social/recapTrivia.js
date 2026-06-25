@@ -11,6 +11,19 @@ function pick(tiers, value) {
   return typeof result === 'function' ? result(value) : result
 }
 
+// Press Start 2P (the pixel font every recap-pixel headline uses) falls back to a mismatched
+// serif glyph for PT-BR diacritics on some uppercase letters (Ê, Ã) and silently drops others —
+// verified by screenshotting "VOCÊ" vs "GÊNERO" side by side. Verdict headlines are ALL-CAPS
+// pixel text, so strip diacritics there for one consistent look instead of that inconsistent
+// per-character fallback. Body copy (lowercase, regular font) is unaffected and keeps accents.
+export function deaccent(str) {
+  return str.normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
+
+function pickPixel(tiers, value) {
+  return deaccent(pick(tiers, value))
+}
+
 export function gamesBeatenLine(n) {
   return pick([
     { min: 0, line: 'o ano tá só começando' },
@@ -37,10 +50,10 @@ export function achievementsLine(n) {
 
 export function consolesTouchedLine(n) {
   return pick([
-    { min: 1, line: 'fiel a uma única plataforma este ano' },
-    { min: 2, line: v => `${v} consoles — já é um cross-over` },
-    { min: 4, line: v => `${v} consoles — geração múltipla, biblioteca múltipla` },
-    { min: 6, line: v => `${v} consoles — praticamente um museu funcional` },
+    { min: 1, line: 'fiel a uma única plataforma' },
+    { min: 2, line: 'já é um cross-over' },
+    { min: 4, line: 'geração múltipla, biblioteca múltipla' },
+    { min: 6, line: 'praticamente um museu funcional' },
   ], n)
 }
 
@@ -82,7 +95,7 @@ export function vsDeltaLine(deltaPct, up) {
 // feature.
 
 export function gamesBeatenVerdict(n) {
-  return pick([
+  return pickPixel([
     { min: 0, line: 'O ANO TÁ SÓ COMEÇANDO' },
     { min: 1, line: 'VOCÊ ABRIU O JOGO' },
     { min: 3, line: 'PEGOU RITMO' },
@@ -93,7 +106,7 @@ export function gamesBeatenVerdict(n) {
 }
 
 export function metacriticVerdict(score) {
-  return pick([
+  return pickPixel([
     { min: 0, line: 'VOCÊ JOGA O QUE QUISER, NÃO O QUE MANDAM' },
     { min: 60, line: 'GOSTO RAZOÁVEL, SEM DRAMA' },
     { min: 80, line: 'VOCÊ JOGA O QUE O MUNDO APLAUDE' },
@@ -102,7 +115,7 @@ export function metacriticVerdict(score) {
 }
 
 export function completionistVerdict(pct) {
-  return pick([
+  return pickPixel([
     { min: 0, line: 'PLATINA QUANDO DÁ VONTADE' },
     { min: 30, line: 'CAÇADOR DE PLATINA EM TREINAMENTO' },
     { min: 60, line: 'PLATINA É O MÍNIMO PRA VOCÊ' },
@@ -110,7 +123,7 @@ export function completionistVerdict(pct) {
 }
 
 export function platformLoyaltyVerdict(pct) {
-  return pick([
+  return pickPixel([
     { min: 0, line: 'VOCÊ CIRCULA ENTRE PLATAFORMAS' },
     { min: 50, line: 'TEM UMA CASA, MAS PASSEIA' },
     { min: 80, line: 'LEALDADE DE DAY ONE' },
@@ -118,7 +131,7 @@ export function platformLoyaltyVerdict(pct) {
 }
 
 export function consolesVerdict(n) {
-  return pick([
+  return pickPixel([
     { min: 1, line: 'FIEL A UMA SÓ PLATAFORMA' },
     { min: 2, line: 'JOGADOR MULTI-PLATAFORMA' },
     { min: 4, line: 'SEU QUARTO É UM MUSEU' },
@@ -126,7 +139,7 @@ export function consolesVerdict(n) {
 }
 
 export function friendRankVerdict(percentile) {
-  return pick([
+  return pickPixel([
     { min: 0, line: 'TEMPORADA DE REBUILD' },
     { min: 25, line: 'SUBINDO NO RANKING' },
     { min: 50, line: 'ACIMA DA MÉDIA DA GALERA' },
@@ -136,7 +149,7 @@ export function friendRankVerdict(percentile) {
 }
 
 export function achievementsVerdict(n) {
-  return pick([
+  return pickPixel([
     { min: 1, line: 'PRIMEIROS TROFÉUS NA ESTANTE' },
     { min: 3, line: 'CAÇADOR DE CONQUISTAS' },
     { min: 8, line: 'SALA DE TROFÉUS LOTADA' },
@@ -144,7 +157,7 @@ export function achievementsVerdict(n) {
 }
 
 export function continueVerdict(n) {
-  return pick([
+  return pickPixel([
     { min: 0, line: 'QUASE SEM PENDÊNCIA' },
     { min: 3, line: 'SUA FILA DE PAUSADOS' },
     { min: 8, line: 'FILA DE CONTINUE INTERMINÁVEL' },
@@ -152,9 +165,21 @@ export function continueVerdict(n) {
 }
 
 export function wallVerdict(n) {
-  return pick([
+  return pickPixel([
     { min: 0, line: 'O COMEÇO DA SUA COLEÇÃO' },
     { min: 10, line: 'UMA ESTANTE RESPEITÁVEL' },
     { min: 25, line: 'HALL DA FAMA DE VERDADE' },
   ], n)
+}
+
+export function busiestMonthVerdict(count) {
+  return pickPixel([
+    { min: 0, line: 'TEVE SEU MOMENTO NO ANO' },
+    { min: 3, line: 'UM MÊS INTEIRO NO MODO HARDCORE' },
+    { min: 5, line: 'ISSO FOI UM EVENTO SAZONAL' },
+  ], count)
+}
+
+export function topGenreVerdict(genre) {
+  return deaccent(`${genre.toUpperCase()} É O SEU MAIN`)
 }

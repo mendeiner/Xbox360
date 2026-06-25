@@ -23,6 +23,7 @@ import {
   gamesBeatenLine, achievementsLine, consolesTouchedLine, vsDeltaLine, friendRankLine,
   gamesBeatenVerdict, metacriticVerdict, completionistVerdict, platformLoyaltyVerdict,
   consolesVerdict, friendRankVerdict, achievementsVerdict, continueVerdict, wallVerdict,
+  busiestMonthVerdict, topGenreVerdict, deaccent,
 } from './recapTrivia'
 
 const MONTHS_PT = [
@@ -89,14 +90,14 @@ function TitleSlide({ recap, year, subject }) {
       <SceneBackdrop covers={covers} accent="#3ddc6a" />
       <CornerSticker color="#3ddc6a">{year}</CornerSticker>
       <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">
-        {subject === 'Você' ? 'JOGADOR 1' : subject?.toUpperCase()}
+        {subject === 'Você' ? 'JOGADOR 1' : deaccent(subject?.toUpperCase() || '')}
       </p>
       <h1 className="relative recap-pixel text-2xl text-center recap-glow leading-loose">
         RETROSPECTIVA<br />{year}
       </h1>
       {covers?.length > 0 && <CoverFan covers={covers} max={5} color="#3ddc6a" className="relative" />}
       <p className="relative recap-pixel text-[11px] recap-anim-blink mt-2">
-        ▸ {recap.isCurrentYear ? 'TOQUE PARA COMEÇAR' : 'PRESS START'}
+        ▸ {recap.isCurrentYear ? 'TOQUE PARA COMECAR' : 'PRESS START'}
       </p>
     </StorySlide>
   )
@@ -137,7 +138,7 @@ function GamesBeatenSlide({ recap }) {
   const count = useCountUp(recap.gamesBeaten, 900)
   const evidence = (recap.topGames?.length ? recap.topGames : recap.beatenGames).map(g => g.cover)
   return (
-    <StorySlide accent="#ff3b3b" bgClassName="bg-[#2a0808]" tease="Você zerou jogos esse ano…">
+    <StorySlide accent="#ff3b3b" bgClassName="bg-[#2a0808]" tease="Voce zerou jogos esse ano…">
       <SceneBackdrop covers={recap.beatenGames.map(g => g.cover)} accent="#ff3b3b" />
       {recap.gamesBeaten > 0 && <Particles kind="confetti" density={Math.min(18, recap.gamesBeaten + 4)} color="#ff3b3b" />}
       <p className="relative recap-pixel text-xs tracking-widest opacity-80">HIGH SCORE</p>
@@ -204,7 +205,7 @@ function VsSlide({ recap, year }) {
         }}
       />
       <p className="relative recap-pixel text-lg text-center recap-glow max-w-[260px]">
-        {up ? 'VOCÊ SUBIU DE FASE' : 'ANO DE FARM, NÃO DE BOSS RUSH'}
+        {up ? 'VOCE SUBIU DE FASE' : 'ANO DE FARM, NAO DE BOSS RUSH'}
       </p>
       <div className="relative flex items-center gap-4">
         <div className="text-center recap-anim-vs-clash" style={{ '--recap-from': '-24px' }}>
@@ -234,6 +235,7 @@ function BusiestMonthSlide({ recap }) {
     <StorySlide accent="#7c5cff" bgClassName="bg-[#140a2a]">
       <SceneBackdrop covers={covers} accent="#7c5cff" />
       <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">STAGE SELECT</p>
+      <p className="relative recap-pixel text-lg text-center recap-glow max-w-[260px]">{busiestMonthVerdict(count)}</p>
       <div className="relative grid grid-cols-4 gap-2 mt-1">
         {MONTHS_PT.map((m, i) => (
           <div key={m} className="relative">
@@ -267,9 +269,10 @@ function TopGenresSlide({ recap }) {
   const genres = recap.topGenres
   const allCovers = genres.flatMap(([, , covers]) => covers || [])
   return (
-    <StorySlide accent="#ffb020" bgClassName="bg-[#2a1c02]" tease="Seu ranking de gêneros…">
+    <StorySlide accent="#ffb020" bgClassName="bg-[#2a1c02]" tease="Seu ranking de generos…">
       <SceneBackdrop covers={allCovers} accent="#ffb020" />
       <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">SELECT YOUR CLASS</p>
+      <p className="relative recap-pixel text-lg text-center recap-glow max-w-[280px]">{topGenreVerdict(genres[0][0])}</p>
       <div className="relative flex flex-col gap-2 w-full max-w-[300px]">
         {genres.map(([genre, n, covers], i) => {
           const slug = GENRE_SLUG[genre]
@@ -298,7 +301,7 @@ function AvgMetacriticSlide({ recap }) {
     <StorySlide accent="#3ddc6a" bgClassName="bg-[#062012]">
       <SceneBackdrop covers={evidence.map(g => g.cover)} accent="#3ddc6a" />
       <Particles kind="lightshaft" density={3} color="#3ddc6a" />
-      <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">MÉDIA METACRITIC</p>
+      <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">MEDIA METACRITIC</p>
       <p className="relative recap-pixel text-lg text-center recap-glow max-w-[260px]">{metacriticVerdict(recap.avgMetacritic)}</p>
       <div className="relative flex items-center gap-3">
         <p className="recap-pixel text-6xl recap-glow">{score}</p>
@@ -355,10 +358,10 @@ function ConsolesSlide({ recap }) {
 function TopRatedSlide({ recap }) {
   const game = recap.topRatedGame
   return (
-    <StorySlide accent="#ff3b3b" bgClassName="bg-black" tease="O chefão do seu ano foi…">
+    <StorySlide accent="#ff3b3b" bgClassName="bg-black" tease="O chefao do seu ano foi…">
       <SceneBackdrop covers={game.cover ? [game.cover] : []} accent="#ff3b3b" />
       <CornerSticker color="#ff3b3b">MVP</CornerSticker>
-      <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">O CHEFÃO DO SEU ANO</p>
+      <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">O CHEFAO DO SEU ANO</p>
       <HealthBar pct={6} color="#ff3b3b" label="BOSS" className="relative w-44" />
       <div className="relative recap-anim-iris-open">
         <div className="w-44 aspect-[3/4] border-2 border-[#ff3b3b] rounded overflow-hidden bg-black/40">
@@ -412,7 +415,7 @@ function PlatformLoyaltySlide({ recap }) {
   return (
     <StorySlide accent={c.accentColor} bgClassName="bg-black">
       <SceneBackdrop covers={covers} accent={c.accentColor} />
-      <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">LEALDADE DE PLATAFORMA</p>
+      <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">PLATAFORMA PRINCIPAL</p>
       <p className="relative recap-pixel text-lg text-center recap-glow max-w-[260px]">{platformLoyaltyVerdict(pct)}</p>
       <img src={`/logos/${c.id}.svg`} alt={c.label} className="relative h-12 w-auto" />
       <p className="relative recap-pixel text-5xl recap-glow">{pct}%</p>
@@ -455,10 +458,10 @@ function CompletionistSlide({ recap }) {
 function HiddenGemSlide({ recap }) {
   const game = recap.hiddenGem
   return (
-    <StorySlide accent="#7c5cff" bgClassName="bg-black" tease="Um jogo que você amou mais que a crítica…">
+    <StorySlide accent="#7c5cff" bgClassName="bg-black" tease="Um jogo que voce amou mais que a critica…">
       <SceneBackdrop covers={game.cover ? [game.cover] : []} accent="#7c5cff" />
       <CornerSticker color="#7c5cff">JOIA RARA</CornerSticker>
-      <p className="relative recap-pixel text-[10px] tracking-widest opacity-70 text-center max-w-[260px]">VOCÊ VIU O QUE A CRÍTICA NÃO VIU</p>
+      <p className="relative recap-pixel text-[10px] tracking-widest opacity-70 text-center max-w-[260px]">VOCE VIU O QUE A CRITICA NAO VIU</p>
       <div className="relative w-40 aspect-[3/4] border-2 border-[#7c5cff] rounded overflow-hidden bg-black/40">
         {game.cover && <img src={game.cover} alt="" className="w-full h-full object-cover" />}
       </div>
@@ -477,7 +480,7 @@ function HiddenGemSlide({ recap }) {
 function FriendRankSlide({ recap }) {
   const { percentile, friendCount } = recap.friendPercentile
   return (
-    <StorySlide accent="#ff3b3b" bgClassName="bg-black" tease="Como você se saiu comparado à galera…">
+    <StorySlide accent="#ff3b3b" bgClassName="bg-black" tease="Como voce se saiu comparado a galera…">
       <SceneBackdrop covers={recap.beatenGames.map(g => g.cover)} accent="#ff3b3b" />
       <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">RANKING ENTRE AMIGOS</p>
       <p className="relative recap-pixel text-lg text-center recap-glow max-w-[260px]">{friendRankVerdict(percentile)}</p>
@@ -495,10 +498,10 @@ function FriendRankSlide({ recap }) {
 function Top5GamesSlide({ recap }) {
   const games = recap.topGames
   return (
-    <StorySlide accent="#ffd84d" bgClassName="bg-[#1a1404]" tease="Os campeões do seu ano…">
+    <StorySlide accent="#ffd84d" bgClassName="bg-[#1a1404]" tease="Os campeoes do seu ano…">
       <SceneBackdrop covers={games.map(g => g.cover)} accent="#ffd84d" />
       <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">TOP 5 DO ANO</p>
-      <p className="relative recap-pixel text-lg text-center recap-glow">OS CAMPEÕES DO SEU ANO</p>
+      <p className="relative recap-pixel text-lg text-center recap-glow">OS CAMPEOES DO SEU ANO</p>
       <div className="relative flex flex-col gap-1.5 w-full max-w-[300px]">
         {games.map((g, i) => (
           <div
@@ -561,7 +564,7 @@ function PlayerTypeSlide({ recap, subject }) {
   return (
     <StorySlide accent="#7c5cff" bgClassName="bg-[#140a2a]">
       <SceneBackdrop covers={recap.beatenGames.map(g => g.cover)} accent="#7c5cff" />
-      <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">{subject === 'Você' ? 'PLAYER 1' : subject?.toUpperCase()}</p>
+      <p className="relative recap-pixel text-[10px] tracking-widest opacity-70">{subject === 'Você' ? 'PLAYER 1' : deaccent(subject?.toUpperCase() || '')}</p>
       <div
         className="relative recap-anim-stamp-impact px-4 py-2 mt-1"
         style={{ border: '2px solid #7c5cff', backgroundColor: 'rgba(124,92,255,0.12)' }}
@@ -591,10 +594,10 @@ function PlayerTypeSlide({ recap, subject }) {
 function ClosingCardSlide({ recap, year, subject }) {
   const top5 = recap.topGames.slice(0, 5)
   const tiles = [
-    recap.topGenres?.length > 0 && { label: 'GÊNERO', value: recap.topGenres[0][0] },
-    recap.avgMetacritic != null && { label: 'MÉDIA META.', value: recap.avgMetacritic },
+    recap.topGenres?.length > 0 && { label: 'GENERO', value: recap.topGenres[0][0] },
+    recap.avgMetacritic != null && { label: 'MEDIA META.', value: recap.avgMetacritic },
     recap.achievementsThisYear?.length > 0 && { label: 'CONQUISTAS', value: recap.achievementsThisYear.length },
-    recap.busiestMonth && { label: 'MÊS CAMPEÃO', value: MONTHS_PT[recap.busiestMonth.month].slice(0, 3).toUpperCase() },
+    recap.busiestMonth && { label: 'MES CAMPEAO', value: MONTHS_PT[recap.busiestMonth.month].slice(0, 3).toUpperCase() },
   ].filter(Boolean)
 
   return (
@@ -624,7 +627,7 @@ function ClosingCardSlide({ recap, year, subject }) {
             className="relative recap-pixel text-[11px] text-center px-2 py-1 mt-1.5 -rotate-2 recap-anim-stamp-impact"
             style={{ color: '#ffb020', border: '2px solid #ffb020', backgroundColor: 'rgba(255,176,32,0.1)' }}
           >
-            {recap.playerType.label.toUpperCase()}
+            {deaccent(recap.playerType.label.toUpperCase())}
           </div>
         )}
 
