@@ -1,4 +1,4 @@
-import { readyConsoles, getConsole } from '../consoles/registry'
+import { readyConsoles, getConsole, ensureConsoleData } from '../consoles/registry'
 import { coverSrc } from '../consoles/dl'
 import { getMyStatuses } from './db'
 import { supabase } from './supabase'

@@ -80,7 +80,7 @@ function MiniCard({ game, console: console_, status, onClick }) {
 export default function GameCube() {
   const {
     console: console_,
-    statuses, loading,
+    statuses, loading, dataLoading,
     search, setSearch,
     inc, exc, toggleInc, toggleExc, clearAll,
     isGrid, filteredGames, collectionGames, stats,
@@ -168,7 +168,7 @@ export default function GameCube() {
 
         {/* Content */}
         <main className="pb-16">
-          {loading ? (
+          {(loading || dataLoading) ? (
             <div className="flex items-center justify-center h-40">
               <div className="w-6 h-6 border-2 border-[#6a0dad] border-t-transparent rounded-full animate-spin" />
             </div>
@@ -218,7 +218,7 @@ export default function GameCube() {
         <Stat color="bg-yellow-500" label={`${stats.cem_porcento} 100%`} />
         <Stat color="bg-purple-700" label={`${stats.quero} quero`} />
         <span className="ml-auto flex-shrink-0 text-[12px] font-semibold text-gray-500">
-          {console_.games.length.toLocaleString('pt-BR')} jogos
+          {(console_.games?.length || 0).toLocaleString('pt-BR')} jogos
         </span>
       </div>
 

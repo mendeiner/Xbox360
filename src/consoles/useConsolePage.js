@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { getMyStatuses } from '../lib/db'
 import { useAuth } from '../contexts/AuthContext'
-import { getConsole } from './registry'
+import { getConsole, ensureConsoleData, isConsoleDataLoaded } from './registry'
 
 export function gameHas(console_, game, f, statuses) {
   if (f === 'joguei')       return !!statuses[game.id]?.joguei
@@ -67,11 +67,17 @@ export function useConsolePage(consoleId) {
 
   const [statuses,    setStatuses]    = useState({})
   const [loading,     setLoading]     = useState(true)
+  const [dataLoading, setDataLoading] = useState(!isConsoleDataLoaded(consoleId))
   const [search,      setSearch]      = useState('')
   const [inc,         setInc]         = useState(new Set())
   const [exc,         setExc]         = useState(new Set())
   const [selectedList,  setSelectedList]  = useState(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
+
+  useEffect(() => {
+    setDataLoading(true)
+    ensureConsoleData(consoleId).finally(() => setDataLoading(false))
+  }, [consoleId])
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
@@ -96,15 +102,17 @@ export function useConsolePage(consoleId) {
   const isGrid = search.length > 0 || inc.size > 0 || exc.size > 0
 
   const filteredGames = useMemo(() => {
+    if (dataLoading) return []
     const q = search.toLowerCase()
     return console_.games.filter(g =>
       (!q || g.title.toLowerCase().includes(q)) && passes(console_, g, inc, exc, statuses)
     )
-  }, [console_, search, inc, exc, statuses])
+  }, [console_, dataLoading, search, inc, exc, statuses])
 
-  const collectionGames = useMemo(() =>
-    console_.games.filter(g => { const s = statuses[g.id]; return s && (s.joguei || s.zerado || s.cem_porcento || s.quero || s.jogando) })
-  , [console_, statuses])
+  const collectionGames = useMemo(() => {
+    if (dataLoading) return []
+    return console_.games.filter(g => { const s = statuses[g.id]; return s && (s.joguei || s.zerado || s.cem_porcento || s.quero || s.jogando) })
+  }, [console_, dataLoading, statuses])
 
   const stats = useMemo(() => {
     const vals = Object.values(statuses)
@@ -114,9 +122,9 @@ export function useConsolePage(consoleId) {
       cem_porcento: vals.filter(s => s.cem_porcento).length,
       quero:        vals.filter(s => s.quero).length,
       jogando:      vals.filter(s => s.jogando).length,
-      dl:           console_.games.filter(g => g.dl).length,
+      dl:           dataLoading ? 0 : console_.games.filter(g => g.dl).length,
     }
-  }, [console_, statuses])
+  }, [console_, dataLoading, statuses])
 
   const handleStatusChange = useCallback((gameId, key, value) => {
     setStatuses(prev => ({ ...prev, [gameId]: { ...(prev[gameId] || {}), [key]: value } }))
@@ -137,7 +145,7 @@ export function useConsolePage(consoleId) {
   return {
     console: console_,
     user,
-    statuses, loading,
+    statuses, loading, dataLoading,
     search, setSearch,
     inc, exc, toggleInc, toggleExc, clearAll,
     isGrid, filteredGames, collectionGames, stats,

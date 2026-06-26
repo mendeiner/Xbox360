@@ -1,47 +1,4 @@
-import { XBOX360_GAMES } from '../data/xbox360/games'
-import { COVERS as XBOX360_COVERS } from '../data/xbox360/covers_map'
-import { DLC_DATA as XBOX360_DLC } from '../data/xbox360/dlc_data'
-import { TRAILERS as XBOX360_TRAILERS } from '../data/xbox360/trailers_data'
-import { PS2_GAMES } from '../data/ps2/games'
-import { COVERS as PS2_COVERS } from '../data/ps2/covers_map'
-import { DLC_DATA as PS2_DLC } from '../data/ps2/dlc_data'
-import { TRAILERS as PS2_TRAILERS } from '../data/ps2/trailers_data'
-import { PS3_GAMES } from '../data/ps3/games'
-import { COVERS as PS3_COVERS } from '../data/ps3/covers_map'
-import { DLC_DATA as PS3_DLC } from '../data/ps3/dlc_data'
-import { TRAILERS as PS3_TRAILERS } from '../data/ps3/trailers_data'
-import { SNES_GAMES } from '../data/snes/games'
-import { COVERS as SNES_COVERS } from '../data/snes/covers_map'
-import { DLC_DATA as SNES_DLC } from '../data/snes/dlc_data'
-import { TRAILERS as SNES_TRAILERS } from '../data/snes/trailers_data'
-import { NSW_GAMES } from '../data/nsw/games'
-import { COVERS as NSW_COVERS } from '../data/nsw/covers_map'
-import { DLC_DATA as NSW_DLC } from '../data/nsw/dlc_data'
-import { TRAILERS as NSW_TRAILERS } from '../data/nsw/trailers_data'
-import { GBA_GAMES } from '../data/gba/games'
-import { COVERS as GBA_COVERS } from '../data/gba/covers_map'
-import { DLC_DATA as GBA_DLC } from '../data/gba/dlc_data'
-import { TRAILERS as GBA_TRAILERS } from '../data/gba/trailers_data'
-import { WII_GAMES } from '../data/wii/games'
-import { COVERS as WII_COVERS } from '../data/wii/covers_map'
-import { DLC_DATA as WII_DLC } from '../data/wii/dlc_data'
-import { TRAILERS as WII_TRAILERS } from '../data/wii/trailers_data'
-import { PS4_GAMES } from '../data/ps4/games'
-import { COVERS as PS4_COVERS } from '../data/ps4/covers_map'
-import { DLC_DATA as PS4_DLC } from '../data/ps4/dlc_data'
-import { TRAILERS as PS4_TRAILERS } from '../data/ps4/trailers_data'
-import { N64_GAMES } from '../data/n64/games'
-import { COVERS as N64_COVERS } from '../data/n64/covers_map'
-import { DLC_DATA as N64_DLC } from '../data/n64/dlc_data'
-import { TRAILERS as N64_TRAILERS } from '../data/n64/trailers_data'
-import { GAMECUBE_GAMES } from '../data/gamecube/games'
-import { COVERS as GAMECUBE_COVERS } from '../data/gamecube/covers_map'
-import { DLC_DATA as GAMECUBE_DLC } from '../data/gamecube/dlc_data'
-import { TRAILERS as GAMECUBE_TRAILERS } from '../data/gamecube/trailers_data'
-import { N3DS_GAMES } from '../data/3ds/games'
-import { COVERS as N3DS_COVERS } from '../data/3ds/covers_map'
-import { DLC_DATA as N3DS_DLC } from '../data/3ds/dlc_data'
-import { TRAILERS as N3DS_TRAILERS } from '../data/3ds/trailers_data'
+import { DATA_LOADERS } from './registryData'
 
 const XBOX360_SPECIAL = [
   { id: 'dl',      label: 'Com Download' },
@@ -660,12 +617,7 @@ export const CONSOLES = {
     accentColor: '#107C10',
     coverPrefix: '/covers/xbox360',
     ready: true,
-
-    games: XBOX360_GAMES,
     // game id -> cover filename key (Xbox 360 uses an 8-char hex title-id; PS2 will use a serial code).
-    covers: XBOX360_COVERS,
-    dlc: XBOX360_DLC,
-    trailers: XBOX360_TRAILERS,
 
     partIds: {
       pt1:'mx360gcxpt1-x360-ztm', pt2:'mx360gcpt2-x360-ztm', pt3:'mx360gcpt3-x360-ztm',
@@ -706,15 +658,10 @@ export const CONSOLES = {
     accentColor: '#003791',
     coverPrefix: '/covers/ps2',
     ready: true,
-
-    games: PS2_GAMES,
     // game id -> NTSC-U serial (e.g. SLUS-20312); kept for reference / re-running the covers
     // pipeline, but cover *files* are saved and looked up by game id (`coversById` below),
     // not by serial.
-    covers: PS2_COVERS,
     coversById: true,
-    dlc: PS2_DLC,
-    trailers: PS2_TRAILERS,
 
     // Confirmed via archive.org metadata API: uploader samuray433's two-part Redump USA
     // collection (titles roughly A-J in p1, K-R in p2). No part 3+ exists. Titles outside
@@ -749,13 +696,8 @@ export const CONSOLES = {
     accentColor: '#00B4D8',
     coverPrefix: '/covers/ps3',
     ready: true,
-
-    games: PS3_GAMES,
     // game id -> NTSC-U serial (e.g. BLUS30625); cover files are named by serial
     // (same convention as Xbox 360), so no `coversById` flag here.
-    covers: PS3_COVERS,
-    dlc: PS3_DLC,
-    trailers: PS3_TRAILERS,
 
     // Confirmed via archive.org metadata API: uploader cvltofmirrors@gmail.com's Redump.org
     // PS3 USA collection, split A-Z (+ a numbers/symbols bucket) with some popular letters
@@ -918,14 +860,9 @@ export const CONSOLES = {
     // same situation as NSW -- centered instead of right-anchored.
     coverAlign: 'center center',
     ready: true,
-
-    games: PS4_GAMES,
     // game id -> RAWG `background_image` URL at catalog-build time; cover *files* are saved
     // and looked up by game id (`coversById` below), same convention as PS2/NSW.
-    covers: PS4_COVERS,
     coversById: true,
-    dlc: PS4_DLC,
-    trailers: PS4_TRAILERS,
 
     // No archive.org download research for PS4 yet -- a real, documented gap, not a bug.
     partIds: {},
@@ -956,14 +893,9 @@ export const CONSOLES = {
     // Cart label scan (front+spine), landscape -- see coverAspect doc on the `gba` entry below.
     coverAspect: 'landscape',
     ready: true,
-
-    games: SNES_GAMES,
     // game id -> libretro-thumbnails cover filename; cover *files* are saved and looked up
     // by game id (`coversById` below), same convention as PS2 — not by the source filename.
-    covers: SNES_COVERS,
     coversById: true,
-    dlc: SNES_DLC,
-    trailers: SNES_TRAILERS,
 
     // No archive.org download research done yet for SNES — a known, deliberate gap, not a bug.
     partIds: {},
@@ -991,14 +923,9 @@ export const CONSOLES = {
     // rather than a box scan, so it's centered instead of right-anchored like the others.
     coverAlign: 'center center',
     ready: true,
-
-    games: NSW_GAMES,
     // game id -> RAWG `background_image` URL at fetch time; cover *files* are saved and looked
     // up by game id (`coversById` below), same convention as PS2 — not by any RAWG/title id.
-    covers: NSW_COVERS,
     coversById: true,
-    dlc: NSW_DLC,
-    trailers: NSW_TRAILERS,
 
     // No archive.org download research for NSW — Switch carts aren't a realistic redump/
     // archive.org source the way retro discs/ROMs are. A deliberate, permanent gap, not a bug.
@@ -1035,14 +962,9 @@ export const CONSOLES = {
     // 'portrait' uses object-cover (consistent box-case proportions, cropping is fine).
     coverAspect: 'square',
     ready: true,
-
-    games: GBA_GAMES,
     // game id -> No-Intro USA serial (4-char GBA game code); cover *files* are saved and
     // looked up by game id (`coversById` below), same convention as PS2/SNES/NSW.
-    covers: GBA_COVERS,
     coversById: true,
-    dlc: GBA_DLC,
-    trailers: GBA_TRAILERS,
 
     // Confirmed via archive.org metadata API: a single item holding the full No-Intro GBA
     // romset (ef_gba_no-intro_2024-02-21). One part, unlike PS2/PS3's alphabetical splits.
@@ -1072,16 +994,11 @@ export const CONSOLES = {
     accentColor: '#1492E6',
     coverPrefix: '/covers/wii',
     ready: true,
-
-    games: WII_GAMES,
     // game id -> libretro-thumbnails Named_Boxarts filename; cover *files* are saved and
     // looked up by game id (`coversById` below), same convention as PS2/SNES/NSW/GBA.
     // GameTDB's own art server (the originally planned source) became unreachable mid-pipeline
     // and never recovered in-session, so covers were sourced from this GitHub mirror instead.
-    covers: WII_COVERS,
     coversById: true,
-    dlc: WII_DLC,
-    trailers: WII_TRAILERS,
 
     // Confirmed via archive.org metadata API: uploader arquivista.exe@gmail.com's Redump USA
     // collection, split into part-2 (L-S) and part-3 (T-Z) RVZ dumps -- no US part-1 (#-K) was
@@ -1126,15 +1043,10 @@ export const CONSOLES = {
     // landscape), not portrait disc-case art -- see coverAspect doc on the `gba` entry above.
     coverAspect: 'landscape',
     ready: true,
-
-    games: N64_GAMES,
     // game id -> libretro-thumbnails Named_Boxarts filename, kept for reference / re-running
     // the covers pipeline. Cover *files* are saved and looked up by game id (`coversById`
     // below), same convention as PS2/GBA/SNES/Wii.
-    covers: N64_COVERS,
     coversById: true,
-    dlc: N64_DLC,
-    trailers: N64_TRAILERS,
 
     // Confirmed via archive.org metadata API: a single item holding the full No-Intro N64
     // romset (ef_nintendo_64_no-intro_2024-02-10, same uploader family as GBA's
@@ -1168,15 +1080,10 @@ export const CONSOLES = {
     accentColor: '#6a0dad',
     coverPrefix: '/covers/gamecube',
     ready: true,
-
-    games: GAMECUBE_GAMES,
     // game id -> libretro-thumbnails Named_Boxarts filename, kept for reference / re-running
     // the covers pipeline. Cover *files* are saved and looked up by game id (`coversById`
     // below), same convention as PS2/GBA/SNES/Wii/N64.
-    covers: GAMECUBE_COVERS,
     coversById: true,
-    dlc: GAMECUBE_DLC,
-    trailers: GAMECUBE_TRAILERS,
 
     // Confirmed via archive.org metadata API: a single item holding a full No-Intro-style
     // GameCube romset, zip-compressed (game-cube_202603, uploader andersonatrozms@hotmail.com).
@@ -1212,15 +1119,10 @@ export const CONSOLES = {
     // than the disc-case portrait shape -- see coverAspect doc on the `gba` entry above.
     coverAspect: 'square',
     ready: true,
-
-    games: N3DS_GAMES,
     // game id -> GameTDB id (e.g. 'A2AE'), kept for reference / re-running the covers pipeline.
     // Cover *files* are saved and looked up by game id (`coversById` below), same convention
     // as PS2/GBA/SNES/Wii/N64/GameCube.
-    covers: N3DS_COVERS,
     coversById: true,
-    dlc: N3DS_DLC,
-    trailers: N3DS_TRAILERS,
 
     // Confirmed via archive.org metadata API: a single CIA-format item (nintendo-3ds-usa-cia,
     // uploader edward.geenwood007@gmail.com) covering A-Z. 334/1144 titles matched exactly
@@ -1257,4 +1159,26 @@ export function getConsole(id) {
 
 export function readyConsoles() {
   return Object.values(CONSOLES).filter(c => c.ready)
+}
+
+const dataCache = {}
+const dataPromises = {}
+
+// Lazily loads a console's games/covers/dlc/trailers and merges them onto its CONSOLES
+// entry in place, so every existing `getConsole(id).games`-style read keeps working
+// unchanged once this has resolved at least once. Cached/de-duped per console id.
+export function ensureConsoleData(id) {
+  if (dataCache[id]) return Promise.resolve(CONSOLES[id])
+  if (!dataPromises[id]) {
+    dataPromises[id] = DATA_LOADERS[id]().then(data => {
+      Object.assign(CONSOLES[id], data)
+      dataCache[id] = true
+      return CONSOLES[id]
+    })
+  }
+  return dataPromises[id]
+}
+
+export function isConsoleDataLoaded(id) {
+  return !!dataCache[id]
 }
