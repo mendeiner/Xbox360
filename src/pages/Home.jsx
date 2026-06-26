@@ -21,8 +21,8 @@ const CONSOLES = [
   { id: 'ps3',        label: 'PS3',         color: 'ps3',        ready: true,  logo: '/logos/ps3.svg'        },
   { id: 'snes',       label: 'SNES',        color: 'snes',       ready: true,  logo: '/logos/snes.svg'       },
   { id: 'nsw',        label: 'Switch',      color: 'nsw',        ready: true,  logo: '/logos/nsw.svg'        },
-  { id: 'n64',        label: 'N64',         color: 'n64',        ready: false, logo: '/logos/n64.svg'        },
-  { id: 'gamecube',   label: 'GameCube',    color: 'gcube',      ready: false, logo: '/logos/gamecube.svg'   },
+  { id: 'n64',        label: 'N64',         color: 'n64',        ready: true,  logo: '/logos/n64.svg'        },
+  { id: 'gamecube',   label: 'GameCube',    color: 'gcube',      ready: true,  logo: '/logos/gamecube.svg'   },
   { id: 'wii',        label: 'Wii',         color: 'wii',        ready: true,  logo: '/logos/wii.svg'        },
   { id: 'ps4',        label: 'PS4',         color: 'ps4',        ready: true,  logo: '/logos/ps4.svg'        },
   { id: 'xboxone',    label: 'Xbox One',    color: 'xboxone',    ready: false, logo: '/logos/xboxone.svg'    },
@@ -30,7 +30,7 @@ const CONSOLES = [
   { id: 'pc',         label: 'PC',          color: 'pc',         ready: false, logo: '/logos/pc.svg'         },
   { id: 'gba',        label: 'GBA',         color: 'gba',        ready: true,  logo: '/logos/gba.svg'        },
   { id: 'gbc',        label: 'GBC',         color: 'gbc',        ready: false, logo: '/logos/gbc.svg'        },
-  { id: '3ds',        label: '3DS',         color: 'n3ds',       ready: false, logo: '/logos/3ds.svg'        },
+  { id: '3ds',        label: '3DS',         color: 'n3ds',       ready: true,  logo: '/logos/3ds.svg'        },
   { id: 'xboxorig',   label: 'Xbox',        color: 'xboxorig',   ready: false, logo: '/logos/xboxorig.svg'   },
   { id: 'ps5',        label: 'PS5',         color: 'ps5',        ready: false, logo: '/logos/ps5.svg'        },
   { id: 'wiiu',       label: 'Wii U',       color: 'wiiu',       ready: false, logo: '/logos/wiiu.svg'       },
@@ -121,6 +121,9 @@ export default function Home() {
     getConsoleCounts('gba', user.id).then(c => setCounts(prev => ({ ...prev, gba: c })))
     getConsoleCounts('wii', user.id).then(c => setCounts(prev => ({ ...prev, wii: c })))
     getConsoleCounts('ps4', user.id).then(c => setCounts(prev => ({ ...prev, ps4: c })))
+    getConsoleCounts('n64', user.id).then(c => setCounts(prev => ({ ...prev, n64: c })))
+    getConsoleCounts('gamecube', user.id).then(c => setCounts(prev => ({ ...prev, gamecube: c })))
+    getConsoleCounts('3ds', user.id).then(c => setCounts(prev => ({ ...prev, '3ds': c })))
   }, [user])
 
   useEffect(() => {
