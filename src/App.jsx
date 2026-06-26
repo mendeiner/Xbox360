@@ -14,6 +14,7 @@ import Wii       from './pages/Wii'
 import PS4       from './pages/PS4'
 import N64       from './pages/N64'
 import GameCube  from './pages/GameCube'
+import N3DS      from './pages/N3DS'
 import Feed      from './pages/Feed'
 import Profile   from './pages/Profile'
 import Rankings  from './pages/Rankings'
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="/ps4"       element={<PS4 />} />
         <Route path="/n64"       element={<N64 />} />
         <Route path="/gamecube"  element={<GameCube />} />
+        <Route path="/3ds"       element={<N3DS />} />
         <Route path="/feed"      element={<PrivateRoute><Feed /></PrivateRoute>} />
         <Route path="/u/:username" element={<PrivateRoute><Profile /></PrivateRoute>} />
         <Route path="/rankings"  element={<PrivateRoute><Rankings /></PrivateRoute>} />

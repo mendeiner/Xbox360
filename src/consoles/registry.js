@@ -38,6 +38,10 @@ import { GAMECUBE_GAMES } from '../data/gamecube/games'
 import { COVERS as GAMECUBE_COVERS } from '../data/gamecube/covers_map'
 import { DLC_DATA as GAMECUBE_DLC } from '../data/gamecube/dlc_data'
 import { TRAILERS as GAMECUBE_TRAILERS } from '../data/gamecube/trailers_data'
+import { N3DS_GAMES } from '../data/3ds/games'
+import { COVERS as N3DS_COVERS } from '../data/3ds/covers_map'
+import { DLC_DATA as N3DS_DLC } from '../data/3ds/dlc_data'
+import { TRAILERS as N3DS_TRAILERS } from '../data/3ds/trailers_data'
 
 const XBOX360_SPECIAL = [
   { id: 'dl',      label: 'Com Download' },
@@ -598,6 +602,57 @@ const GAMECUBE_GROUPS = [
 // convention already used for PS3/Wii's localMP/online derivation) -- no 3D-stereoscopic flag
 // exists in GameTDB's 3DS schema (only prose mentions in some synopses), so it's intentionally
 // not tracked here rather than guessed.
+const N3DS_SPECIAL = [
+  { id: 'dl',      label: 'Com Download' },
+  { id: 'localMP', label: 'Local Multi' },
+  { id: 'online',  label: 'Online Multi' },
+]
+
+const N3DS_GROUPS = [
+  {
+    id: 'status', title: 'Status',
+    filters: [
+      { id: 'jogando',      label: 'Jogando' },
+      { id: 'joguei',       label: 'Joguei' },
+      { id: 'zerado',       label: 'Zerado' },
+      { id: 'cem_porcento', label: '100%' },
+      { id: 'quero',        label: 'Quero Jogar' },
+    ],
+  },
+  {
+    id: 'genero', title: 'Gênero',
+    filters: [
+      { id: 'Ação',          label: 'Ação' },
+      { id: 'Aventura',      label: 'Aventura' },
+      { id: 'Plataforma',    label: 'Plataforma' },
+      { id: 'RPG',           label: 'RPG' },
+      { id: 'Tiro',          label: 'Tiro' },
+      { id: 'Luta',          label: 'Luta' },
+      { id: 'Puzzle',        label: 'Puzzle' },
+      { id: 'Estratégia',    label: 'Estratégia' },
+      { id: 'Simulação',     label: 'Simulação' },
+      { id: 'Arcade',        label: 'Arcade' },
+    ],
+  },
+  {
+    id: 'esportes', title: 'Esportes',
+    filters: [
+      { id: 'Esportes', label: 'Esportes (geral)' },
+      { id: 'Corrida',  label: 'Corrida' },
+    ],
+  },
+  {
+    id: 'outros', title: 'Outros',
+    filters: [
+      { id: 'Tabuleiro',    label: 'Tabuleiro' },
+      { id: 'Caça e Pesca', label: 'Caça e Pesca' },
+      { id: 'Música',       label: 'Música' },
+      { id: 'Educativo',    label: 'Educativo' },
+      { id: 'Casual',       label: 'Casual' },
+    ],
+  },
+]
+
 export const CONSOLES = {
   xbox360: {
     id: 'xbox360',
@@ -1148,6 +1203,52 @@ export const CONSOLES = {
     filterGroups: GAMECUBE_GROUPS,
   },
 
+  '3ds': {
+    id: '3ds',
+    label: 'Nintendo 3DS',
+    accentColor: '#d3232a',
+    coverPrefix: '/covers/3ds',
+    // GameTDB's 3DS cover art is a front-cover-only scan, ~1.14:1 (400x352), closer to square
+    // than the disc-case portrait shape -- see coverAspect doc on the `gba` entry above.
+    coverAspect: 'square',
+    ready: true,
+
+    games: N3DS_GAMES,
+    // game id -> GameTDB id (e.g. 'A2AE'), kept for reference / re-running the covers pipeline.
+    // Cover *files* are saved and looked up by game id (`coversById` below), same convention
+    // as PS2/GBA/SNES/Wii/N64/GameCube.
+    covers: N3DS_COVERS,
+    coversById: true,
+    dlc: N3DS_DLC,
+    trailers: N3DS_TRAILERS,
+
+    // Confirmed via archive.org metadata API: a single CIA-format item (nintendo-3ds-usa-cia,
+    // uploader edward.geenwood007@gmail.com) covering A-Z. 334/1144 titles matched exactly
+    // against its file listing -- the rest (mostly 3DSWare eShop titles, which this collection
+    // doesn't aim to fully cover) have no `dl`, a documented gap rather than a guess.
+    partIds: {
+      p1: 'nintendo-3ds-usa-cia',
+    },
+    partNames: {
+      p1: 'USA CIA Collection',
+    },
+    dlTypeLabel() { return 'Download' },
+
+    // Real GameTDB type split: 3DS/New3DS (physical cart) vs 3DSWare (eShop digital). Virtual
+    // Console re-releases (NES/GB/GBC/GG/GBA on 3DS) were excluded from the catalog entirely --
+    // GameTDB has ~0% genre data for them and there's no archive.org source for that format.
+    types: ['retail', 'eshop'],
+    typeMap: {
+      retail: ['Retail', 'text-red-400 bg-red-400/10 border-red-400/20'],
+      eshop: ['eShop', 'text-sky-400 bg-sky-400/10 border-sky-400/20'],
+    },
+
+    trailerSearchSuffix: '3DS trailer',
+    trailerCacheKey: '3ds_trailers',
+
+    specialFilters: N3DS_SPECIAL,
+    filterGroups: N3DS_GROUPS,
+  },
 }
 
 export function getConsole(id) {
