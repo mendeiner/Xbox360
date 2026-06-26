@@ -1,4 +1,43 @@
-import { DATA_LOADERS } from './registryData'
+import { XBOX360_GAMES } from '../data/xbox360/games'
+import { COVERS as XBOX360_COVERS } from '../data/xbox360/covers_map'
+import { DLC_DATA as XBOX360_DLC } from '../data/xbox360/dlc_data'
+import { TRAILERS as XBOX360_TRAILERS } from '../data/xbox360/trailers_data'
+import { PS2_GAMES } from '../data/ps2/games'
+import { COVERS as PS2_COVERS } from '../data/ps2/covers_map'
+import { DLC_DATA as PS2_DLC } from '../data/ps2/dlc_data'
+import { TRAILERS as PS2_TRAILERS } from '../data/ps2/trailers_data'
+import { PS3_GAMES } from '../data/ps3/games'
+import { COVERS as PS3_COVERS } from '../data/ps3/covers_map'
+import { DLC_DATA as PS3_DLC } from '../data/ps3/dlc_data'
+import { TRAILERS as PS3_TRAILERS } from '../data/ps3/trailers_data'
+import { SNES_GAMES } from '../data/snes/games'
+import { COVERS as SNES_COVERS } from '../data/snes/covers_map'
+import { DLC_DATA as SNES_DLC } from '../data/snes/dlc_data'
+import { TRAILERS as SNES_TRAILERS } from '../data/snes/trailers_data'
+import { NSW_GAMES } from '../data/nsw/games'
+import { COVERS as NSW_COVERS } from '../data/nsw/covers_map'
+import { DLC_DATA as NSW_DLC } from '../data/nsw/dlc_data'
+import { TRAILERS as NSW_TRAILERS } from '../data/nsw/trailers_data'
+import { GBA_GAMES } from '../data/gba/games'
+import { COVERS as GBA_COVERS } from '../data/gba/covers_map'
+import { DLC_DATA as GBA_DLC } from '../data/gba/dlc_data'
+import { TRAILERS as GBA_TRAILERS } from '../data/gba/trailers_data'
+import { WII_GAMES } from '../data/wii/games'
+import { COVERS as WII_COVERS } from '../data/wii/covers_map'
+import { DLC_DATA as WII_DLC } from '../data/wii/dlc_data'
+import { TRAILERS as WII_TRAILERS } from '../data/wii/trailers_data'
+import { PS4_GAMES } from '../data/ps4/games'
+import { COVERS as PS4_COVERS } from '../data/ps4/covers_map'
+import { DLC_DATA as PS4_DLC } from '../data/ps4/dlc_data'
+import { TRAILERS as PS4_TRAILERS } from '../data/ps4/trailers_data'
+import { N64_GAMES } from '../data/n64/games'
+import { COVERS as N64_COVERS } from '../data/n64/covers_map'
+import { DLC_DATA as N64_DLC } from '../data/n64/dlc_data'
+import { TRAILERS as N64_TRAILERS } from '../data/n64/trailers_data'
+import { GAMECUBE_GAMES } from '../data/gamecube/games'
+import { COVERS as GAMECUBE_COVERS } from '../data/gamecube/covers_map'
+import { DLC_DATA as GAMECUBE_DLC } from '../data/gamecube/dlc_data'
+import { TRAILERS as GAMECUBE_TRAILERS } from '../data/gamecube/trailers_data'
 
 const XBOX360_SPECIAL = [
   { id: 'dl',      label: 'Com Download' },
@@ -559,57 +598,6 @@ const GAMECUBE_GROUPS = [
 // convention already used for PS3/Wii's localMP/online derivation) -- no 3D-stereoscopic flag
 // exists in GameTDB's 3DS schema (only prose mentions in some synopses), so it's intentionally
 // not tracked here rather than guessed.
-const N3DS_SPECIAL = [
-  { id: 'dl',      label: 'Com Download' },
-  { id: 'localMP', label: 'Local Multi' },
-  { id: 'online',  label: 'Online Multi' },
-]
-
-const N3DS_GROUPS = [
-  {
-    id: 'status', title: 'Status',
-    filters: [
-      { id: 'jogando',      label: 'Jogando' },
-      { id: 'joguei',       label: 'Joguei' },
-      { id: 'zerado',       label: 'Zerado' },
-      { id: 'cem_porcento', label: '100%' },
-      { id: 'quero',        label: 'Quero Jogar' },
-    ],
-  },
-  {
-    id: 'genero', title: 'Gênero',
-    filters: [
-      { id: 'Ação',          label: 'Ação' },
-      { id: 'Aventura',      label: 'Aventura' },
-      { id: 'Plataforma',    label: 'Plataforma' },
-      { id: 'RPG',           label: 'RPG' },
-      { id: 'Tiro',          label: 'Tiro' },
-      { id: 'Luta',          label: 'Luta' },
-      { id: 'Puzzle',        label: 'Puzzle' },
-      { id: 'Estratégia',    label: 'Estratégia' },
-      { id: 'Simulação',     label: 'Simulação' },
-      { id: 'Arcade',        label: 'Arcade' },
-    ],
-  },
-  {
-    id: 'esportes', title: 'Esportes',
-    filters: [
-      { id: 'Esportes', label: 'Esportes (geral)' },
-      { id: 'Corrida',  label: 'Corrida' },
-    ],
-  },
-  {
-    id: 'outros', title: 'Outros',
-    filters: [
-      { id: 'Tabuleiro',    label: 'Tabuleiro' },
-      { id: 'Caça e Pesca', label: 'Caça e Pesca' },
-      { id: 'Música',       label: 'Música' },
-      { id: 'Educativo',    label: 'Educativo' },
-      { id: 'Casual',       label: 'Casual' },
-    ],
-  },
-]
-
 export const CONSOLES = {
   xbox360: {
     id: 'xbox360',
@@ -1160,52 +1148,6 @@ export const CONSOLES = {
     filterGroups: GAMECUBE_GROUPS,
   },
 
-  '3ds': {
-    id: '3ds',
-    label: 'Nintendo 3DS',
-    accentColor: '#d3232a',
-    coverPrefix: '/covers/3ds',
-    // GameTDB's 3DS cover art is a front-cover-only scan, ~1.14:1 (400x352), closer to square
-    // than the disc-case portrait shape -- see coverAspect doc on the `gba` entry above.
-    coverAspect: 'square',
-    ready: true,
-
-    games: N3DS_GAMES,
-    // game id -> GameTDB id (e.g. 'A2AE'), kept for reference / re-running the covers pipeline.
-    // Cover *files* are saved and looked up by game id (`coversById` below), same convention
-    // as PS2/GBA/SNES/Wii/N64/GameCube.
-    covers: N3DS_COVERS,
-    coversById: true,
-    dlc: N3DS_DLC,
-    trailers: N3DS_TRAILERS,
-
-    // Confirmed via archive.org metadata API: a single CIA-format item (nintendo-3ds-usa-cia,
-    // uploader edward.geenwood007@gmail.com) covering A-Z. 334/1144 titles matched exactly
-    // against its file listing -- the rest (mostly 3DSWare eShop titles, which this collection
-    // doesn't aim to fully cover) have no `dl`, a documented gap rather than a guess.
-    partIds: {
-      p1: 'nintendo-3ds-usa-cia',
-    },
-    partNames: {
-      p1: 'USA CIA Collection',
-    },
-    dlTypeLabel() { return 'Download' },
-
-    // Real GameTDB type split: 3DS/New3DS (physical cart) vs 3DSWare (eShop digital). Virtual
-    // Console re-releases (NES/GB/GBC/GG/GBA on 3DS) were excluded from the catalog entirely --
-    // GameTDB has ~0% genre data for them and there's no archive.org source for that format.
-    types: ['retail', 'eshop'],
-    typeMap: {
-      retail: ['Retail', 'text-red-400 bg-red-400/10 border-red-400/20'],
-      eshop: ['eShop', 'text-sky-400 bg-sky-400/10 border-sky-400/20'],
-    },
-
-    trailerSearchSuffix: '3DS trailer',
-    trailerCacheKey: '3ds_trailers',
-
-    specialFilters: N3DS_SPECIAL,
-    filterGroups: N3DS_GROUPS,
-  },
 }
 
 export function getConsole(id) {

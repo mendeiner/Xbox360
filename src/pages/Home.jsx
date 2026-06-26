@@ -30,7 +30,7 @@ const CONSOLES = [
   { id: 'pc',         label: 'PC',          color: 'pc',         ready: false, logo: '/logos/pc.svg'         },
   { id: 'gba',        label: 'GBA',         color: 'gba',        ready: true,  logo: '/logos/gba.svg'        },
   { id: 'gbc',        label: 'GBC',         color: 'gbc',        ready: false, logo: '/logos/gbc.svg'        },
-  { id: '3ds',        label: '3DS',         color: 'n3ds',       ready: true,  logo: '/logos/3ds.svg'        },
+  { id: '3ds',        label: '3DS',         color: 'n3ds',       ready: false, logo: '/logos/3ds.svg'        },
   { id: 'xboxorig',   label: 'Xbox',        color: 'xboxorig',   ready: false, logo: '/logos/xboxorig.svg'   },
   { id: 'ps5',        label: 'PS5',         color: 'ps5',        ready: false, logo: '/logos/ps5.svg'        },
   { id: 'wiiu',       label: 'Wii U',       color: 'wiiu',       ready: false, logo: '/logos/wiiu.svg'       },
@@ -123,7 +123,6 @@ export default function Home() {
     getConsoleCounts('ps4', user.id).then(c => setCounts(prev => ({ ...prev, ps4: c })))
     getConsoleCounts('n64', user.id).then(c => setCounts(prev => ({ ...prev, n64: c })))
     getConsoleCounts('gamecube', user.id).then(c => setCounts(prev => ({ ...prev, gamecube: c })))
-    getConsoleCounts('3ds', user.id).then(c => setCounts(prev => ({ ...prev, '3ds': c })))
   }, [user])
 
   useEffect(() => {

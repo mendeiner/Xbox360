@@ -7,7 +7,7 @@
 //   - year (ps3 only, always)        -> RAWG `released` year (GameTDB's year is known-bad)
 //
 // Usage:
-//   node rawg_enrich.mjs <xbox360|ps2|ps3> --key <RAWG_API_KEY> [--apply] [--limit N] [--start N]
+//   node rawg_enrich.mjs <xbox360|ps2|ps3|gamecube> --key <RAWG_API_KEY> [--apply] [--limit N] [--start N]
 //
 // Without --apply, runs as a dry run: prints proposed changes + a summary, writes nothing.
 // With --apply, rewrites the console's games.js file in place, one line at a time, leaving
@@ -16,9 +16,10 @@
 import fs from 'fs';
 
 const CONSOLES = {
-  xbox360: { file: 'src/data/xbox360/games.js', platform: 14, style: 'json', fixYear: false },
-  ps2:     { file: 'src/data/ps2/games.js',     platform: 15, style: 'js',   fixYear: false },
-  ps3:     { file: 'src/data/ps3/games.js',     platform: 16, style: 'js',   fixYear: true },
+  xbox360:  { file: 'src/data/xbox360/games.js',  platform: 14,  style: 'json', fixYear: false },
+  ps2:      { file: 'src/data/ps2/games.js',      platform: 15,  style: 'js',   fixYear: false },
+  ps3:      { file: 'src/data/ps3/games.js',      platform: 16,  style: 'js',   fixYear: true },
+  gamecube: { file: 'src/data/gamecube/games.js', platform: 105, style: 'js',   fixYear: false },
 };
 
 const GENRE_MAP = {
@@ -138,7 +139,7 @@ function parseArgs(argv) {
 async function main() {
   const args = parseArgs(process.argv);
   const cfg = CONSOLES[args.console];
-  if (!cfg) { console.error('Usage: node rawg_enrich.mjs <xbox360|ps2|ps3> --key <RAWG_API_KEY> [--apply] [--limit N] [--start N]'); process.exit(1); }
+  if (!cfg) { console.error('Usage: node rawg_enrich.mjs <xbox360|ps2|ps3|gamecube> --key <RAWG_API_KEY> [--apply] [--limit N] [--start N]'); process.exit(1); }
   if (!args.key) { console.error('Missing --key <RAWG_API_KEY>'); process.exit(1); }
 
   const raw = fs.readFileSync(cfg.file, 'utf8');
