@@ -5,6 +5,7 @@ import PollResultCard from '../components/social/PollResultCard'
 import { useAuth } from '../contexts/AuthContext'
 import { useFriends } from '../hooks/useFriends'
 import { getClosedPolls, getPollResults } from '../lib/polls'
+import { ensureAllConsoleData } from '../consoles/registry'
 
 // History of every poll (yours + friends') that has finished its 1-week voting window —
 // the site-wide counterpart to PollStrip's "open right now" strip on the home feed.
@@ -19,7 +20,7 @@ export default function Polls() {
     if (!user) return
     setLoading(true)
     const userIds = [user.id, ...friends.map(f => f.id)]
-    getClosedPolls(userIds, user.id).then(async ps => {
+    Promise.all([ensureAllConsoleData(), getClosedPolls(userIds, user.id)]).then(async ([, ps]) => {
       const res = {}
       await Promise.all(ps.map(async p => { res[p.id] = await getPollResults(p.id) }))
       setPolls(ps)

@@ -1,21 +1,21 @@
-import { readyConsoles, getConsole, ensureConsoleData } from '../consoles/registry'
+import { readyConsoles, getConsole, ensureAllConsoleData } from '../consoles/registry'
 import { coverSrc } from '../consoles/dl'
-import { getMyStatuses } from './db'
+import { getAllMyStatuses } from './db'
 import { supabase } from './supabase'
 import { isMockMode } from './mockState'
 import { MOCK_STATUS_ROWS_STORE } from './mockSocialData'
 import { getUserAchievements, achievementById, getFriends } from './social'
 
-// For each ready console, fetch the current user's statuses and join them against that
-// console's static games data. Only games with at least one status flag set are kept —
-// this is what powers the cross-console dashboard (Phase E of the PS2 plan).
+// For each ready console, fetch the current user's statuses (one round trip for every
+// console, see getAllMyStatuses) and join them against that console's static games data.
+// Only games with at least one status flag set are kept — this is what powers the
+// cross-console dashboard (Phase E of the PS2 plan).
 export async function getCollection() {
+  const [, allStatuses] = await Promise.all([ensureAllConsoleData(), getAllMyStatuses()])
   const consoles = readyConsoles()
-  const pairs = await Promise.all(
-    consoles.map(c => getMyStatuses(c.id).then(s => [c, s]).catch(() => [c, {}]))
-  )
-  return pairs
-    .map(([console_, statuses]) => {
+  return consoles
+    .map(console_ => {
+      const statuses = allStatuses[console_.id] || {}
       const games = console_.games.filter(g => {
         const s = statuses[g.id]
         return s && (s.joguei || s.zerado || s.cem_porcento || s.quero || s.jogando)
@@ -29,6 +29,7 @@ export async function getCollection() {
 // both getProfileStats and getYearInReview build on (needs registry access, so lives
 // here rather than in social.js, same split collection.js already establishes).
 export async function getAllStatusRows(userId) {
+  await ensureAllConsoleData()
   if (isMockMode()) {
     return (MOCK_STATUS_ROWS_STORE[userId] || []).map(r => ({ ...r, _console: getConsole(r.console) }))
   }

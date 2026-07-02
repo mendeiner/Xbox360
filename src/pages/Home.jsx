@@ -10,10 +10,10 @@ import GameCard from '../components/xbox360/GameCard'
 import GameModal from '../components/xbox360/GameModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useFriends } from '../hooks/useFriends'
-import { getConsoleCounts, generateInvite } from '../lib/db'
+import { getAllMyStatuses, generateInvite } from '../lib/db'
 import { getCollection } from '../lib/collection'
 import { getFeedPosts, getCommunityRanking, latestPostByUser as buildLatestPostByUser } from '../lib/social'
-import { getConsole } from '../consoles/registry'
+import { getConsole, ensureAllConsoleData } from '../consoles/registry'
 
 const CONSOLES = [
   { id: 'xbox360',    label: 'Xbox 360',    color: 'xbox',       ready: true,  logo: '/logos/xbox360.svg'    },
@@ -89,11 +89,11 @@ export default function Home() {
   useEffect(() => {
     if (!user) return
     setRankingLoading(true)
-    getCommunityRanking(5).then(rows => {
+    Promise.all([ensureAllConsoleData(), getCommunityRanking(5)]).then(([, rows]) => {
       const resolved = rows
         .map(r => {
           const console_ = getConsole(r.console)
-          const game = console_?.games.find(g => g.id === r.game_id)
+          const game = console_?.games?.find(g => g.id === r.game_id)
           return game ? { ...r, game, console: console_ } : null
         })
         .filter(Boolean)
@@ -113,17 +113,19 @@ export default function Home() {
 
   useEffect(() => {
     if (!user) return
-    getConsoleCounts('xbox360', user.id).then(c => setCounts(prev => ({ ...prev, xbox360: c })))
-    getConsoleCounts('ps2', user.id).then(c => setCounts(prev => ({ ...prev, ps2: c })))
-    getConsoleCounts('ps3', user.id).then(c => setCounts(prev => ({ ...prev, ps3: c })))
-    getConsoleCounts('snes', user.id).then(c => setCounts(prev => ({ ...prev, snes: c })))
-    getConsoleCounts('nsw', user.id).then(c => setCounts(prev => ({ ...prev, nsw: c })))
-    getConsoleCounts('gba', user.id).then(c => setCounts(prev => ({ ...prev, gba: c })))
-    getConsoleCounts('wii', user.id).then(c => setCounts(prev => ({ ...prev, wii: c })))
-    getConsoleCounts('ps4', user.id).then(c => setCounts(prev => ({ ...prev, ps4: c })))
-    getConsoleCounts('n64', user.id).then(c => setCounts(prev => ({ ...prev, n64: c })))
-    getConsoleCounts('gamecube', user.id).then(c => setCounts(prev => ({ ...prev, gamecube: c })))
-    getConsoleCounts('3ds', user.id).then(c => setCounts(prev => ({ ...prev, '3ds': c })))
+    getAllMyStatuses().then(byConsole => {
+      const next = {}
+      for (const consoleId of Object.keys(byConsole)) {
+        const rows = Object.values(byConsole[consoleId])
+        next[consoleId] = {
+          joguei:       rows.filter(r => r.joguei).length,
+          zerado:       rows.filter(r => r.zerado).length,
+          cem_porcento: rows.filter(r => r.cem_porcento).length,
+          jogando:      rows.filter(r => r.jogando).length,
+        }
+      }
+      setCounts(next)
+    })
   }, [user])
 
   useEffect(() => {

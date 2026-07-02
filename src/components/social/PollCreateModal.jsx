@@ -19,7 +19,7 @@ export default function PollCreateModal({ onClose, onSubmit }) {
   const console_ = consoles.find(c => c.id === consoleId)
 
   const q = query.trim().toLowerCase()
-  const results = q ? console_?.games.filter(g => g.title.toLowerCase().includes(q)).slice(0, 30) || [] : []
+  const results = q ? console_?.games?.filter(g => g.title.toLowerCase().includes(q)).slice(0, 30) || [] : []
 
   function toggleGame(game) {
     setSelected(prev => prev.some(g => g.id === game.id)

@@ -9,7 +9,7 @@ import CommentThread from './CommentThread'
 export default function FeedPostCard({ post, currentUserId, compact = false }) {
   const isBatch = post.action === 'added_games'
   const console_ = isBatch ? null : getConsole(post.console)
-  const game = isBatch ? null : console_?.games.find(g => g.id === post.game_id)
+  const game = isBatch ? null : console_?.games?.find(g => g.id === post.game_id)
 
   // counts/mine come pre-batched from getFeedPosts (reactionCounts/myReaction) — no
   // per-card round-trip needed.
@@ -62,7 +62,7 @@ export default function FeedPostCard({ post, currentUserId, compact = false }) {
           <div className="flex shrink-0">
             {visible.map((item, i) => {
               const itemConsole = getConsole(item.console)
-              const itemGame = itemConsole?.games.find(g => g.id === item.game_id)
+              const itemGame = itemConsole?.games?.find(g => g.id === item.game_id)
               return (
                 <img
                   key={i}

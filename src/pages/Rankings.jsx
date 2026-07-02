@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import Nav from '../components/Nav'
 import RankingRow, { PodiumCard } from '../components/social/RankingRow'
 import MetacriticRow, { MetacriticPodiumCard } from '../components/social/MetacriticRow'
-import { getConsole, readyConsoles } from '../consoles/registry'
+import { getConsole, readyConsoles, ensureAllConsoleData } from '../consoles/registry'
 import { getCommunityRanking } from '../lib/social'
 import { getMetacriticRankings } from '../lib/metacritic'
 
@@ -14,26 +14,28 @@ const TABS = [
 export default function Rankings() {
   const [tab, setTab] = useState('comunidade')
   const [rows, setRows] = useState([])
+  const [metacritic, setMetacritic] = useState({ byConsole: {}, overall: [] })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let alive = true
-    getCommunityRanking(50).then(data => {
+    Promise.all([ensureAllConsoleData(), getCommunityRanking(50)]).then(([, data]) => {
       if (!alive) return
       const resolved = data
         .map(r => {
           const console_ = getConsole(r.console)
-          const game = console_?.games.find(g => g.id === r.game_id)
+          const game = console_?.games?.find(g => g.id === r.game_id)
           return game ? { ...r, game, console: console_ } : null
         })
         .filter(Boolean)
       setRows(resolved)
+      setMetacritic(getMetacriticRankings())
       setLoading(false)
     })
     return () => { alive = false }
   }, [])
 
-  const { byConsole, overall } = useMemo(() => getMetacriticRankings(), [])
+  const { byConsole, overall } = metacritic
   const [consoleFilter, setConsoleFilter] = useState('all')
   const metacriticConsoles = readyConsoles().filter(c => byConsole[c.id]?.length)
   const metacriticRows = consoleFilter === 'all' ? overall : (byConsole[consoleFilter] || [])
@@ -127,7 +129,11 @@ export default function Rankings() {
               ))}
             </div>
 
-            {metacriticRows.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center h-40">
+                <div className="w-6 h-6 border-2 border-social border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : metacriticRows.length === 0 ? (
               <p className="text-gray-600 text-sm">Nenhum jogo com nota cadastrada ainda.</p>
             ) : (
               <>

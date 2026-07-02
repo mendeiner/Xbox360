@@ -47,7 +47,7 @@ export default function UsersList({ friends, latestPostByUser = {}, loading, for
               const post = latestPostByUser[f.id]
               const isBatch = post?.action === 'added_games'
               const console_ = post && !isBatch && getConsole(post.console)
-              const game = console_?.games.find(g => g.id === post.game_id)
+              const game = console_?.games?.find(g => g.id === post.game_id)
               return (
                 <div key={f.id} className="flex items-center gap-3 px-2 py-2 hover:bg-white/5 transition-colors">
                   {/* Avatar is the hover/tap recap trigger; kept separate from the profile

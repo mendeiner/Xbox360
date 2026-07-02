@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getFeedPosts, getRecentAchievementUnlocks } from '../lib/social'
+import { ensureAllConsoleData } from '../consoles/registry'
 
 // Merges feed_posts + user_achievements (two independently-paginated sources) into one
 // chronological, infinitely-scrollable timeline. Each source keeps its own cursor so
@@ -17,7 +18,8 @@ export function useActivityFeed(userIds, viewerId, { pageSize = 15 } = {}) {
 
   const fetchPage = useCallback(async () => {
     const c = cursors.current
-    const [posts, unlocks] = await Promise.all([
+    const [, posts, unlocks] = await Promise.all([
+      ensureAllConsoleData(),
       c.postsExhausted ? [] : getFeedPosts(userIds, { limit: pageSize, before: c.posts, viewerId }),
       c.achievementsExhausted ? [] : getRecentAchievementUnlocks(userIds, { limit: pageSize, before: c.achievements }),
     ])

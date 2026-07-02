@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { coverSrc, coverObjectPosition } from '../../consoles/dl'
-import { getConsole } from '../../consoles/registry'
+import { getConsole, ensureAllConsoleData } from '../../consoles/registry'
 import { getActivePolls, votePoll, getPollResults, createPoll } from '../../lib/polls'
 import PollCreateModal from './PollCreateModal'
 
@@ -31,7 +31,7 @@ export default function PollStrip({ userId, userIds = [] }) {
   const load = useCallback(() => {
     if (!userId) return
     setLoading(true)
-    getActivePolls(userIds, userId).then(async ps => {
+    Promise.all([ensureAllConsoleData(), getActivePolls(userIds, userId)]).then(async ([, ps]) => {
       const res = {}
       await Promise.all(ps.map(async p => { res[p.id] = await getPollResults(p.id) }))
       setPolls(ps)
@@ -85,7 +85,7 @@ export default function PollStrip({ userId, userIds = [] }) {
             </div>
             <div className="flex gap-3 overflow-x-auto">
               {poll.game_ids.map(gameId => {
-                const game = console_?.games.find(g => g.id === gameId)
+                const game = console_?.games?.find(g => g.id === gameId)
                 if (!game) return null
                 const count = res.counts[gameId] || 0
                 const pct = res.total ? Math.round((count / res.total) * 100) : 0

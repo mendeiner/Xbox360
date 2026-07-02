@@ -14,7 +14,7 @@ import { getTop10, saveTop10 } from '../../lib/social'
 
 function resolveGame(entry) {
   const console_ = getConsole(entry.console)
-  const game = console_?.games.find(g => g.id === entry.game_id)
+  const game = console_?.games?.find(g => g.id === entry.game_id)
   return game ? { ...entry, game, console: console_ } : null
 }
 
@@ -84,7 +84,7 @@ export default function Top10Editor({ userId, isOwner }) {
     const q = query.toLowerCase()
     const results = []
     for (const console_ of readyConsoles()) {
-      for (const game of console_.games) {
+      for (const game of (console_.games || [])) {
         if (game.title.toLowerCase().includes(q)) {
           results.push({ game, console: console_ })
           if (results.length >= 8) return results

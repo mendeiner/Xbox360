@@ -24,6 +24,32 @@ export async function getMyStatuses(console_name) {
   return Object.fromEntries(data.map(r => [r.game_id, r]))
 }
 
+// Every console's statuses for the current user in one round trip — used by pages that
+// need cross-console data (Home's picker counts + "Meus Jogos") instead of one call per
+// console. Returns { [consoleId]: { [gameId]: row } }.
+export async function getAllMyStatuses() {
+  if (isMockMode()) {
+    const out = {}
+    for (const key of Object.keys(localStorage)) {
+      if (!key.startsWith('mock_statuses_')) continue
+      out[key.slice('mock_statuses_'.length)] = JSON.parse(localStorage.getItem(key) || '{}')
+    }
+    return out
+  }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return {}
+  const { data, error } = await supabase
+    .from('game_statuses')
+    .select('*')
+    .eq('user_id', user.id)
+  if (error) throw error
+  const byConsole = {}
+  for (const r of data) {
+    (byConsole[r.console] ||= {})[r.game_id] = r
+  }
+  return byConsole
+}
+
 export async function setFlag(console_name, gameId, flag, value) {
   if (isMockMode()) {
     const stored = JSON.parse(localStorage.getItem(mockKey(console_name)) || '{}')
@@ -52,31 +78,6 @@ export async function setRating(console_name, gameId, rating) {
       onConflict: 'user_id,console,game_id'
     })
   if (error) throw error
-}
-
-export async function getConsoleCounts(console_name, userId) {
-  if (isMockMode()) {
-    const stored = JSON.parse(localStorage.getItem(mockKey(console_name)) || '{}')
-    const rows = Object.values(stored)
-    return {
-      joguei: rows.filter(r => r.joguei).length,
-      zerado: rows.filter(r => r.zerado).length,
-      cem_porcento: rows.filter(r => r.cem_porcento).length,
-      jogando: rows.filter(r => r.jogando).length,
-    }
-  }
-  const { data, error } = await supabase
-    .from('game_statuses')
-    .select('joguei, zerado, cem_porcento, jogando')
-    .eq('console', console_name)
-    .eq('user_id', userId)
-  if (error) throw error
-  return {
-    joguei:      data.filter(r => r.joguei).length,
-    zerado:      data.filter(r => r.zerado).length,
-    cem_porcento: data.filter(r => r.cem_porcento).length,
-    jogando:     data.filter(r => r.jogando).length,
-  }
 }
 
 export async function getFriendStatuses(console_name, friendId) {

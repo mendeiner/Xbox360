@@ -273,7 +273,7 @@ export default function Login() {
 
       {import.meta.env.DEV && (
         <button
-          onClick={() => { mockLogin(); navigate('/home') }}
+          onClick={async () => { await mockLogin(); navigate('/home') }}
           className="relative z-10 mt-4 text-xs text-gray-600 hover:text-gray-400 underline underline-offset-2 transition-colors motion-safe:animate-fade-up"
           style={{ animationDelay: '200ms' }}
         >

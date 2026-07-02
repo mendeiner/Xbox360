@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import { isMockMode } from './mockState'
-import { CONSOLES, readyConsoles } from '../consoles/registry'
+import { CONSOLES, readyConsoles, ensureAllConsoleData } from '../consoles/registry'
 import { emitAchievementsUnlocked } from './achievementToast'
 import {
   MOCK_FEED_POSTS, MOCK_COMMENTS_STORE, MOCK_REACTIONS_STORE, MOCK_PROFILES,
@@ -622,6 +622,7 @@ export async function getUserAchievements(userId) {
 // Gathers every stat any achievement rule needs, in one pass, shared by both
 // checkAndUnlockAchievements (unlock) and getAchievementsProgress (progress bars).
 async function computeAchievementStats(userId) {
+  await ensureAllConsoleData()
   const [
     { data: statuses, error: statusesError }, { data: unlockedRows }, { data: comments }, { data: top10 },
     { data: profile }, { data: feedPosts }, { data: pollsCreated }, { data: pollVotes },

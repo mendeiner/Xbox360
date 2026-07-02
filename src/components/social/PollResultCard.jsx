@@ -22,7 +22,7 @@ export default function PollResultCard({ poll, results, showCreator = false }) {
       </div>
       <div className="flex gap-3 overflow-x-auto">
         {poll.game_ids.map(gameId => {
-          const game = console_?.games.find(g => g.id === gameId)
+          const game = console_?.games?.find(g => g.id === gameId)
           if (!game) return null
           const count = res.counts[gameId] || 0
           const pct = res.total ? Math.round((count / res.total) * 100) : 0

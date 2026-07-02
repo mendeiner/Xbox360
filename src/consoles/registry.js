@@ -1182,3 +1182,10 @@ export function ensureConsoleData(id) {
 export function isConsoleDataLoaded(id) {
   return !!dataCache[id]
 }
+
+// Loads every ready console's games/covers/dlc/trailers (cached per console) -- call this
+// before any cross-console code path reads `console.games`/`covers`/etc on more than one
+// console at a time (Home, Feed, Profile, Polls, Rankings and the lib helpers they use).
+export function ensureAllConsoleData() {
+  return Promise.all(readyConsoles().map(c => ensureConsoleData(c.id)))
+}

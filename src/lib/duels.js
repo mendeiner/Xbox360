@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { isMockMode } from './mockState'
 import { getAllStatusRows } from './collection'
-import { getConsole } from '../consoles/registry'
+import { getConsole, ensureAllConsoleData } from '../consoles/registry'
 
 // Head-to-head duel voting + the compatibility score derived from it (plus rating
 // similarity). Session-only in-memory store for mock mode, same pattern as the other
@@ -123,6 +123,7 @@ function buildBracketTree(order, seeds) {
 export async function getUserDuelBrackets(userId) {
   const votes = await getUserDuelVotes(userId)
   if (!votes.length) return []
+  await ensureAllConsoleData()
 
   const byConsole = {}
   for (const v of votes) (byConsole[v.console] ||= []).push(v)

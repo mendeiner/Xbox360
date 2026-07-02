@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { getProfile, setMockMode } from '../lib/db'
+import { initMockSocialData } from '../lib/mockSocialData'
 
 const AuthContext = createContext(null)
 
@@ -42,8 +43,9 @@ export function AuthProvider({ children }) {
     supabase.auth.signOut()
   }
 
-  const mockLogin = () => {
+  const mockLogin = async () => {
     setMockMode(true)
+    await initMockSocialData()
     setUser({ id: 'mock-user', email: 'bruno@teste.com' })
     setProfile({ id: 'mock-user', username: 'BrunoTeste', display_name: 'Bruno (Teste)' })
   }
