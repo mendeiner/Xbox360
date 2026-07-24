@@ -350,11 +350,17 @@ export async function getFriends(userId) {
     .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
     .eq('status', 'accepted')
   if (error) return []
-  return data.map(f => {
+  // A friend pair can end up with a row in each direction (e.g. hand-inserted test data) —
+  // dedupe by friend id so the same person never renders twice in the friends list.
+  const byFriendId = new Map()
+  for (const f of data) {
     const friendId = f.requester_id === userId ? f.addressee_id : f.requester_id
     const profile = f.requester_id === userId ? f.addressee : f.requester
-    return { id: friendId, username: profile?.username, displayName: profile?.display_name, avatarUrl: profile?.avatar_url }
-  })
+    if (!byFriendId.has(friendId)) {
+      byFriendId.set(friendId, { id: friendId, username: profile?.username, displayName: profile?.display_name, avatarUrl: profile?.avatar_url })
+    }
+  }
+  return [...byFriendId.values()]
 }
 
 // ── Top 10 ───────────────────────────────────────────────────────────────
