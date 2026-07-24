@@ -90,4 +90,12 @@ export const DATA_LOADERS = {
       import('../data/3ds/dlc_data'),
       import('../data/3ds/trailers_data'),
     ]).then(([g, c, d, t]) => ({ games: g.N3DS_GAMES, covers: c.COVERS, dlc: d.DLC_DATA, trailers: t.TRAILERS })),
+
+  ps1: () =>
+    Promise.all([
+      import('../data/ps1/games'),
+      import('../data/ps1/covers_map'),
+      import('../data/ps1/dlc_data'),
+      import('../data/ps1/trailers_data'),
+    ]).then(([g, c, d, t]) => ({ games: g.PS1_GAMES, covers: c.COVERS, dlc: d.DLC_DATA, trailers: t.TRAILERS })),
 }

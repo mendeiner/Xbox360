@@ -610,6 +610,47 @@ const N3DS_GROUPS = [
   },
 ]
 
+// No players/online data source exists for PS1 (no bulk equivalent of GameCube's No-Intro
+// `users` field or GameTDB's input/wi-fi tags was found), so 'dl' is the only special filter,
+// same situation as SNES.
+const PS1_SPECIAL = [
+  { id: 'dl', label: 'Com Download' },
+]
+
+// Genre comes solely from rawg_enrich.mjs's blunt RAWG-genre mapping (no richer hand-curated
+// tagging source like Xbox 360/PS2/PS3), so this list mirrors GAMECUBE_GROUPS's genero list
+// exactly rather than the finer JRPG/TPS/Furtivo/etc breakdown those consoles have.
+const PS1_GROUPS = [
+  {
+    id: 'status', title: 'Status',
+    filters: [
+      { id: 'jogando',      label: 'Jogando' },
+      { id: 'joguei',       label: 'Joguei' },
+      { id: 'zerado',       label: 'Zerado' },
+      { id: 'cem_porcento', label: '100%' },
+      { id: 'quero',        label: 'Quero Jogar' },
+    ],
+  },
+  {
+    id: 'genero', title: 'Gênero',
+    filters: [
+      { id: 'Ação',          label: 'Ação' },
+      { id: 'Plataforma',    label: 'Plataforma' },
+      { id: 'Aventura',      label: 'Aventura' },
+      { id: 'Arcade',        label: 'Arcade' },
+      { id: 'Esportes',      label: 'Esportes' },
+      { id: 'Corrida',       label: 'Corrida' },
+      { id: 'RPG',           label: 'RPG' },
+      { id: 'Luta',          label: 'Luta' },
+      { id: 'FPS',           label: 'FPS' },
+      { id: 'Puzzle',        label: 'Puzzle' },
+      { id: 'Estratégia',    label: 'Estratégia' },
+      { id: 'Simulação',     label: 'Simulação' },
+      { id: 'Família',       label: 'Família' },
+    ],
+  },
+]
+
 export const CONSOLES = {
   xbox360: {
     id: 'xbox360',
@@ -1150,6 +1191,54 @@ export const CONSOLES = {
 
     specialFilters: N3DS_SPECIAL,
     filterGroups: N3DS_GROUPS,
+  },
+
+  ps1: {
+    id: 'ps1',
+    label: 'PS1',
+    accentColor: '#8C92AC',
+    coverPrefix: '/covers/ps1',
+    // libretro-thumbnails' PS1 Named_Boxarts are a fixed 512x512 square canvas (front-cover-
+    // only scan), not portrait disc-case art -- verified by sampling actual downloaded pixel
+    // dimensions, see coverAspect doc on the `gba` entry above.
+    coverAspect: 'square',
+    ready: true,
+    // game id -> libretro-thumbnails Named_Boxarts filename, kept for reference / re-running
+    // the covers pipeline. Cover *files* are saved and looked up by game id (`coversById`
+    // below), same convention as PS2/GBA/SNES/Wii/N64/GameCube/3DS.
+    coversById: true,
+
+    // Confirmed via archive.org metadata API: uploader "ef_" (same family as GBA/N64's ef_
+    // items) split their full multi-region Redump PS1 set into 4 alphabetical parts. All 1327
+    // catalog titles' dl.file (single or multi-disc) were matched exactly against these parts'
+    // file listings and re-verified after matching.
+    partIds: {
+      p1: 'ef_Sony_PlayStation1_Redump_Collection_1of4',
+      p2: 'ef_Sony_PlayStation1_Redump_Collection_2of4',
+      p3: 'ef_Sony_PlayStation1_Redump_Collection_3of4',
+      p4: 'ef_Sony_PlayStation1_Redump_Collection_4of4',
+    },
+    partNames: {
+      p1: 'Redump Parte 1',
+      p2: 'Redump Parte 2',
+      p3: 'Redump Parte 3',
+      p4: 'Redump Parte 4',
+    },
+    dlTypeLabel() { return 'Download' },
+
+    // No PSN/PS one Classics digital-storefront split is tracked (kept simple per Phase 0
+    // scoping decision) -- every game uses a single 'retail' type value, same convention as
+    // PS2/SNES/NSW/GBA/N64/GameCube.
+    types: ['retail'],
+    typeMap: {
+      retail: ['Retail', 'text-slate-400 bg-slate-400/10 border-slate-400/20'],
+    },
+
+    trailerSearchSuffix: 'PS1 trailer',
+    trailerCacheKey: 'ps1_trailers',
+
+    specialFilters: PS1_SPECIAL,
+    filterGroups: PS1_GROUPS,
   },
 }
 
