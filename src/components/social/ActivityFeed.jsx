@@ -7,7 +7,7 @@ import AchievementFeedCard from './AchievementFeedCard'
 // feed_posts + achievement unlocks via useActivityFeed, renders the right card per item
 // kind, and loads more as the sentinel div enters the viewport.
 export default function ActivityFeed({ userIds, viewerId, currentUserId, emptyMessage, reloadKey }) {
-  const { items, loading, loadingMore, hasMore, loadMore, error } = useActivityFeed(userIds, viewerId, { reloadKey })
+  const { items, loading, loadingMore, hasMore, loadMore, error, removePost } = useActivityFeed(userIds, viewerId, { reloadKey })
   const sentinelRef = useRef(null)
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function ActivityFeed({ userIds, viewerId, currentUserId, emptyMe
         return (
           <div key={itemKey} className={className} style={i < 8 ? { animationDelay: `${i * 40}ms` } : undefined}>
             {item.kind === 'post'
-              ? <FeedPostCard post={item.data} currentUserId={currentUserId} />
+              ? <FeedPostCard post={item.data} currentUserId={currentUserId} onDeleted={removePost} />
               : <AchievementFeedCard unlock={item.data} />}
           </div>
         )

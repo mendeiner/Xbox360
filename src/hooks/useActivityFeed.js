@@ -71,5 +71,10 @@ export function useActivityFeed(userIds, viewerId, { pageSize = 15, reloadKey } 
     }
   }, [fetchPage, hasMore, loadingMore])
 
-  return { items, loading, loadingMore, hasMore, loadMore, error }
+  // Optimistic local removal after a successful deletePost — no need to refetch the page.
+  const removePost = useCallback(postId => {
+    setItems(prev => prev.filter(item => !(item.kind === 'post' && item.data.id === postId)))
+  }, [])
+
+  return { items, loading, loadingMore, hasMore, loadMore, error, removePost }
 }

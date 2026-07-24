@@ -146,6 +146,16 @@ export async function getFeedPosts(userIds, { limit = 30, before, viewerId } = {
   }))
 }
 
+export async function deletePost(postId) {
+  if (isMockMode()) {
+    const i = MOCK_FEED_POSTS.findIndex(p => p.id === postId)
+    if (i !== -1) MOCK_FEED_POSTS.splice(i, 1)
+    return
+  }
+  const { error } = await supabase.from('feed_posts').delete().eq('id', postId)
+  if (error) throw error
+}
+
 // Most recent post per user_id — posts must already be sorted desc by created_at.
 export function latestPostByUser(posts) {
   const result = {}
