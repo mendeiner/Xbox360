@@ -65,9 +65,16 @@ export default function Nav() {
         </Link>
         {user && (
           <div className="hidden sm:flex items-center gap-4">
-            <Link to="/home" className="text-xs font-semibold text-gray-400 hover:text-white transition-colors">Painel</Link>
             <div className="relative group">
-              <Link to="/consoles" className="text-xs font-semibold text-gray-400 hover:text-social transition-colors">Consoles</Link>
+              <Link
+                to="/consoles"
+                className="flex items-center gap-1.5 text-sm font-bold text-social bg-social/10 hover:bg-social/20 border border-social/40 hover:border-social/70 px-3 py-1.5 rounded-lg transition-all shadow-[0_0_12px_-4px_theme(colors.social.DEFAULT)] hover:shadow-[0_0_16px_-2px_theme(colors.social.DEFAULT)]"
+              >
+                Consoles
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 transition-transform group-hover:translate-y-0.5">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </Link>
               <div className="absolute left-0 top-full pt-2 hidden group-hover:block group-focus-within:block z-50">
                 <div className="grid grid-cols-4 gap-1.5 p-3 rounded-xl bg-surface-2 border border-surface-4 shadow-xl w-[240px]">
                   {FLYOUT_TILES.map(c => (
