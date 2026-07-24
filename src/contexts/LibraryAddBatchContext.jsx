@@ -6,7 +6,7 @@ import { createFeedPost, createBatchFeedPost } from '../lib/social'
 const LibraryAddBatchContext = createContext(null)
 
 const CONSOLE_PATHS = ['/xbox360', '/ps2', '/ps3', '/snes', '/nsw']
-const FLUSH_DELAY_MS = 2 * 60 * 1000
+const FLUSH_DELAY_MS = 20 * 60 * 1000
 
 function storageKey(userId) {
   return `pending_feed_batch_${userId}`

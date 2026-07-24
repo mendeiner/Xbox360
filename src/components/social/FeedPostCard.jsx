@@ -18,6 +18,7 @@ export default function FeedPostCard({ post, currentUserId, compact = false, onD
   const [comments, setComments] = useState(post.comments || [])
   const [composerOpen, setComposerOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [showList, setShowList] = useState(false)
 
   const canDelete = !compact && currentUserId && post.user_id === currentUserId
 
@@ -119,45 +120,57 @@ export default function FeedPostCard({ post, currentUserId, compact = false, onD
 
   if (isBatch) {
     const items = post.items || []
-    const visible = items.slice(0, 5)
-    const overflow = items.length - visible.length
+    const games = items
+      .map(item => {
+        const c = getConsole(item.console)
+        return { c, g: c?.games?.find(g => g.id === item.game_id) }
+      })
+      .filter(x => x.g)
+    const visible = games.slice(0, 5)
+    const overflow = games.length - visible.length
+    // Tap (mobile) or hover (desktop, via `group`) reveals the titles that were added.
+    const toggle = () => setShowList(v => !v)
 
     return (
       <div className="bg-social-ink border border-[#222b4a]">
-        <div className="flex gap-5 p-5">
-          <div className="flex shrink-0">
-            {visible.map((item, i) => {
-              const itemConsole = getConsole(item.console)
-              const itemGame = itemConsole?.games?.find(g => g.id === item.game_id)
-              return (
-                <img
-                  key={i}
-                  src={(itemGame && coverSrc(itemGame, itemConsole)) || undefined}
-                  alt=""
-                  className="w-12 h-[68px] object-cover bg-[#0a0a0a] border-2 border-social-ink"
-                  style={{ objectPosition: coverObjectPosition(itemConsole), marginLeft: i > 0 ? '-24px' : 0 }}
-                  onError={e => { e.target.style.display = 'none' }}
-                />
-              )
-            })}
+        <div className="group flex gap-3 p-3">
+          <button type="button" onClick={toggle} aria-label="Ver jogos adicionados" className="flex shrink-0 cursor-pointer">
+            {visible.map(({ c, g }, i) => (
+              <img
+                key={i}
+                src={coverSrc(g, c) || undefined}
+                alt=""
+                className="w-8 h-11 object-cover bg-[#0a0a0a] border-2 border-social-ink"
+                style={{ objectPosition: coverObjectPosition(c), marginLeft: i > 0 ? '-16px' : 0 }}
+                onError={e => { e.target.style.display = 'none' }}
+              />
+            ))}
             {overflow > 0 && (
-              <div className="w-12 h-[68px] flex items-center justify-center bg-[#0a0a0a] border-2 border-social-ink text-[11px] font-bold text-gray-400" style={{ marginLeft: '-24px' }}>
+              <div className="w-8 h-11 flex items-center justify-center bg-[#0a0a0a] border-2 border-social-ink text-[10px] font-bold text-gray-400" style={{ marginLeft: '-16px' }}>
                 +{overflow}
               </div>
             )}
-          </div>
+          </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-3">
-              <p className="text-base text-white leading-snug">
+              <p className="text-sm text-white leading-snug">
                 <Link to={`/u/${post.profiles?.username}`} className="font-black hover:text-social">{username}</Link>
                 <span className="text-gray-400"> adicionou </span>
-                <span className="font-black">{items.length} jogos</span>
+                <button type="button" onClick={toggle} className="font-black hover:text-social cursor-pointer">{games.length} jogos</button>
               </p>
               {deleteButton}
             </div>
-            <p className="text-[11px] text-gray-500 font-semibold mt-1.5 uppercase tracking-wide">
+            <p className="text-[10px] text-gray-500 font-semibold mt-1 uppercase tracking-wide">
               {new Date(post.created_at).toLocaleDateString('pt-BR')}
             </p>
+
+            <ul className={(showList ? 'block ' : 'hidden ') + 'lg:group-hover:block mt-2 space-y-0.5'}>
+              {games.map(({ c, g }, i) => (
+                <li key={i} className="text-[11px] text-gray-300 truncate">
+                  <span className="text-gray-500">{c.label}</span> · {g.title}
+                </li>
+              ))}
+            </ul>
 
             {interactions}
           </div>
@@ -170,24 +183,24 @@ export default function FeedPostCard({ post, currentUserId, compact = false, onD
 
   return (
     <div className="bg-social-ink border border-[#222b4a]">
-      <div className="flex gap-5 p-5">
+      <div className="flex gap-3 p-3">
         <img
           src={coverSrc(game, console_) || undefined}
           alt=""
-          className="w-20 h-[110px] object-cover bg-[#0a0a0a] shrink-0"
+          className="w-12 h-[68px] object-cover bg-[#0a0a0a] shrink-0"
           style={{ objectPosition: coverObjectPosition(console_) }}
           onError={e => { e.target.style.display = 'none' }}
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
-            <p className="text-base text-white leading-snug">
+            <p className="text-sm text-white leading-snug">
               <Link to={`/u/${post.profiles?.username}`} className="font-black hover:text-social">{username}</Link>
               <span className="text-gray-400"> {ACTION_LABEL[post.action]} </span>
               <span className="font-black">{game.title}</span>
             </p>
             {deleteButton}
           </div>
-          <p className="text-[11px] text-gray-500 font-semibold mt-1.5 uppercase tracking-wide">
+          <p className="text-[10px] text-gray-500 font-semibold mt-1 uppercase tracking-wide">
             {console_.label} · {new Date(post.created_at).toLocaleDateString('pt-BR')}
             {post.rating ? ` · ★ ${post.rating}` : ''}
           </p>
