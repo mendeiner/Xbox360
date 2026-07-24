@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function CommentThread({ comments, onAdd, currentUserId }) {
+export default function CommentThread({ comments, onAdd, currentUserId, showForm = true }) {
   const [body, setBody] = useState('')
   const [posting, setPosting] = useState(false)
 
@@ -25,6 +25,7 @@ export default function CommentThread({ comments, onAdd, currentUserId }) {
         </div>
       ))}
 
+      {showForm && (
       <form onSubmit={handleSubmit} className="flex gap-2 pt-1">
         <input
           value={body}
@@ -41,6 +42,7 @@ export default function CommentThread({ comments, onAdd, currentUserId }) {
           Enviar
         </button>
       </form>
+      )}
     </div>
   )
 }

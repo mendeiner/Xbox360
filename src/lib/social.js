@@ -102,17 +102,22 @@ export async function createBatchFeedPost(items) {
 }
 
 // viewerId (optional) folds in the current viewer's own reaction per post, so
-// FeedPostCard doesn't need a separate getReactionSummary round-trip per card.
+// FeedPostCard doesn't need a separate getReactionSummary round-trip per card. Comments
+// are fetched in full (not just counted) so FeedPostCard can render them immediately
+// without a click-to-load round-trip.
 export async function getFeedPosts(userIds, { limit = 30, before, viewerId } = {}) {
   if (isMockMode()) {
     const pool = before ? MOCK_FEED_POSTS.filter(p => new Date(p.created_at) < new Date(before)) : MOCK_FEED_POSTS
-    return pool.slice(0, limit).map(post => ({
-      ...post,
-      commentCount: (MOCK_COMMENTS_STORE[post.id] || []).length,
-      reactionCounts: Object.values(MOCK_REACTIONS_STORE[post.id] || {})
-        .reduce((acc, r) => { acc[r] = (acc[r] || 0) + 1; return acc }, {}),
-      myReaction: viewerId ? (MOCK_REACTIONS_STORE[post.id]?.[viewerId] || null) : null,
-    }))
+    return pool.slice(0, limit).map(post => {
+      const comments = (MOCK_COMMENTS_STORE[post.id] || []).slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      return {
+        ...post,
+        comments,
+        reactionCounts: Object.values(MOCK_REACTIONS_STORE[post.id] || {})
+          .reduce((acc, r) => { acc[r] = (acc[r] || 0) + 1; return acc }, {}),
+        myReaction: viewerId ? (MOCK_REACTIONS_STORE[post.id]?.[viewerId] || null) : null,
+      }
+    })
   }
   if (!userIds.length) return []
   // post_reactions also FKs to both feed_posts and profiles, so a bare `profiles(...)`
@@ -130,7 +135,7 @@ export async function getFeedPosts(userIds, { limit = 30, before, viewerId } = {
 
   const postIds = data.map(p => p.id)
   const queries = [
-    supabase.from('post_comments').select('post_id').in('post_id', postIds),
+    supabase.from('post_comments').select('*, profiles(username, display_name, avatar_url)').in('post_id', postIds).order('created_at', { ascending: true }),
     supabase.from('post_reactions').select('post_id, reaction').in('post_id', postIds),
   ]
   if (viewerId) queries.push(supabase.from('post_reactions').select('post_id, reaction').in('post_id', postIds).eq('user_id', viewerId))
@@ -138,7 +143,7 @@ export async function getFeedPosts(userIds, { limit = 30, before, viewerId } = {
 
   return data.map(post => ({
     ...post,
-    commentCount: (comments || []).filter(c => c.post_id === post.id).length,
+    comments: (comments || []).filter(c => c.post_id === post.id),
     reactionCounts: (reactions || [])
       .filter(r => r.post_id === post.id)
       .reduce((acc, r) => { acc[r.reaction] = (acc[r.reaction] || 0) + 1; return acc }, {}),
@@ -211,19 +216,6 @@ export async function getRecentAchievementUnlocks(userIds, { limit = 30, before 
 }
 
 // ── Comments ─────────────────────────────────────────────────────────────
-
-export async function getComments(postId) {
-  if (isMockMode()) {
-    return (MOCK_COMMENTS_STORE[postId] || []).slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-  }
-  const { data, error } = await supabase
-    .from('post_comments')
-    .select('*, profiles(username, display_name, avatar_url)')
-    .eq('post_id', postId)
-    .order('created_at', { ascending: true })
-  if (error) throw error
-  return data
-}
 
 export async function addComment(postId, body) {
   if (isMockMode()) {

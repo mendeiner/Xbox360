@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getConsole } from '../../consoles/registry'
 import { coverSrc, coverObjectPosition } from '../../consoles/dl'
-import { ACTION_LABEL, getComments, addComment, deletePost } from '../../lib/social'
+import { ACTION_LABEL, addComment, deletePost } from '../../lib/social'
 import ReactionPicker from './ReactionPicker'
 import CommentThread from './CommentThread'
 
@@ -15,9 +15,8 @@ export default function FeedPostCard({ post, currentUserId, compact = false, onD
   // counts/mine come pre-batched from getFeedPosts (reactionCounts/myReaction) — no
   // per-card round-trip needed.
   const [reactions, setReactions] = useState({ counts: post.reactionCounts || {}, mine: post.myReaction ?? null })
-  const [commentsOpen, setCommentsOpen] = useState(false)
-  const [comments, setComments] = useState([])
-  const [commentCount, setCommentCount] = useState(post.commentCount || 0)
+  const [comments, setComments] = useState(post.comments || [])
+  const [composerOpen, setComposerOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   const canDelete = !compact && currentUserId && post.user_id === currentUserId
@@ -44,18 +43,9 @@ export default function FeedPostCard({ post, currentUserId, compact = false, onD
     </button>
   )
 
-  async function toggleComments() {
-    if (!commentsOpen) {
-      const data = await getComments(post.id).catch(() => [])
-      setComments(data)
-    }
-    setCommentsOpen(v => !v)
-  }
-
   async function handleAddComment(body) {
     const comment = await addComment(post.id, body)
     setComments(prev => [...prev, { ...comment, profiles: { username: 'você' } }])
-    setCommentCount(c => c + 1)
   }
 
   if (!isBatch && !isPhoto && !game) return null
@@ -71,9 +61,20 @@ export default function FeedPostCard({ post, currentUserId, compact = false, onD
         mine={reactions.mine}
         onChange={reaction => setReactions(r => recomputeCounts(r, reaction))}
       />
-      <button onClick={toggleComments} className="text-[11px] text-gray-500 hover:text-white font-bold uppercase tracking-wide">
-        {commentCount} {commentCount === 1 ? 'comentário' : 'comentários'}
+      {comments.length > 0 && (
+        <span className="text-[11px] text-gray-500 font-bold uppercase tracking-wide">
+          {comments.length} {comments.length === 1 ? 'comentário' : 'comentários'}
+        </span>
+      )}
+      <button onClick={() => setComposerOpen(v => !v)} className="text-[11px] text-gray-500 hover:text-white font-bold uppercase tracking-wide">
+        Comentar
       </button>
+    </div>
+  )
+
+  const commentsBlock = (comments.length > 0 || composerOpen) && (
+    <div className="border-t border-[#222b4a] px-4 py-3">
+      <CommentThread comments={comments} onAdd={handleAddComment} currentUserId={currentUserId} showForm={composerOpen} />
     </div>
   )
 
@@ -111,11 +112,7 @@ export default function FeedPostCard({ post, currentUserId, compact = false, onD
           {interactions}
         </div>
 
-        {commentsOpen && (
-          <div className="border-t border-[#222b4a] px-4 py-3">
-            <CommentThread comments={comments} onAdd={handleAddComment} currentUserId={currentUserId} />
-          </div>
-        )}
+        {commentsBlock}
       </div>
     )
   }
@@ -166,11 +163,7 @@ export default function FeedPostCard({ post, currentUserId, compact = false, onD
           </div>
         </div>
 
-        {commentsOpen && (
-          <div className="border-t border-[#222b4a] px-4 py-3">
-            <CommentThread comments={comments} onAdd={handleAddComment} currentUserId={currentUserId} />
-          </div>
-        )}
+        {commentsBlock}
       </div>
     )
   }
@@ -203,11 +196,7 @@ export default function FeedPostCard({ post, currentUserId, compact = false, onD
         </div>
       </div>
 
-      {commentsOpen && (
-        <div className="border-t border-[#222b4a] px-4 py-3">
-          <CommentThread comments={comments} onAdd={handleAddComment} currentUserId={currentUserId} />
-        </div>
-      )}
+      {commentsBlock}
     </div>
   )
 }

@@ -10,8 +10,7 @@ import AchievementsWidget from '../components/social/AchievementsWidget'
 import PhotoPostComposer from '../components/social/PhotoPostComposer'
 import { useAuth } from '../contexts/AuthContext'
 import { useFriends } from '../hooks/useFriends'
-import { getFeedPosts, getCommunityRanking, getRecentAchievementUnlocks, latestPostByUser as buildLatestPostByUser } from '../lib/social'
-import { getConsole, ensureAllConsoleData } from '../consoles/registry'
+import { getFeedPosts, getRecentAchievementUnlocks, latestPostByUser as buildLatestPostByUser } from '../lib/social'
 
 export default function Home() {
   const { user }       = useAuth()
@@ -24,8 +23,6 @@ export default function Home() {
   // feed section below fetches/paginates its own posts via ActivityFeed/useActivityFeed.
   const [feedPosts, setFeedPosts]       = useState([])
   const [achievementUnlocks, setAchievementUnlocks] = useState([])
-  const [rankingRows, setRankingRows]   = useState([])
-  const [rankingLoading, setRankingLoading] = useState(true)
 
   useEffect(() => {
     if (!user) return
@@ -33,22 +30,6 @@ export default function Home() {
     getFeedPosts(userIds, { limit: 20, viewerId: user.id }).then(posts => setFeedPosts(posts))
     getRecentAchievementUnlocks(userIds, { limit: 8 }).then(unlocks => setAchievementUnlocks(unlocks))
   }, [user, friends])
-
-  useEffect(() => {
-    if (!user) return
-    setRankingLoading(true)
-    Promise.all([ensureAllConsoleData(), getCommunityRanking(5)]).then(([, rows]) => {
-      const resolved = rows
-        .map(r => {
-          const console_ = getConsole(r.console)
-          const game = console_?.games?.find(g => g.id === r.game_id)
-          return game ? { ...r, game, console: console_ } : null
-        })
-        .filter(Boolean)
-      setRankingRows(resolved)
-      setRankingLoading(false)
-    })
-  }, [user])
 
   // Most recent shared post per friend, for the users list's "last game added" line.
   const latestPostByUser = buildLatestPostByUser(feedPosts)
@@ -131,21 +112,6 @@ export default function Home() {
             </div>
           </aside>
         </div>
-
-        {/* Community ranking — demoted to a small link-out card, feed is the priority now */}
-        <Link
-          to="/rankings"
-          className="block mb-12 bg-surface-2 border border-surface-4 hover:border-social/40 px-5 py-4 transition-colors"
-        >
-          <p className="text-[11px] font-black uppercase tracking-[1.5px] text-social mb-1">Melhores de Todos os Tempos</p>
-          <p className="text-gray-500 text-sm">
-            {rankingLoading
-              ? 'Carregando ranking da comunidade…'
-              : rankingRows.length === 0
-                ? 'Nenhum Top 10 foi salvo ainda — ver ranking completo →'
-                : `${rankingRows[0]?.game?.title} lidera o ranking da comunidade — ver completo →`}
-          </p>
-        </Link>
 
       </main>
     </div>
