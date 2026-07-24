@@ -67,8 +67,12 @@ export default function FeedPostCard({ post, currentUserId, compact = false }) {
           {post.caption && <p className="text-sm text-gray-300 mt-3 whitespace-pre-wrap">{post.caption}</p>}
         </div>
 
-        {photos.length > 0 && (
-          <div className={`grid gap-0.5 ${photos.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {photos.length === 1 && (
+          <img src={photos[0]} alt="" className="w-full max-h-[600px] object-contain bg-[#0a0a0a]" />
+        )}
+
+        {photos.length > 1 && (
+          <div className="grid grid-cols-2 gap-0.5">
             {photos.map((url, i) => (
               <img key={i} src={url} alt="" className="w-full aspect-square object-cover bg-[#0a0a0a]" />
             ))}
