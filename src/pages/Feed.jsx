@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom'
 import Nav from '../components/Nav'
 import ActivityFeed from '../components/social/ActivityFeed'
 import UsersList from '../components/social/UsersList'
+import AchievementsWidget from '../components/social/AchievementsWidget'
+import PhotoPostComposer from '../components/social/PhotoPostComposer'
 import { useAuth } from '../contexts/AuthContext'
 import { useFriends } from '../hooks/useFriends'
-import { getFeedPosts, getRecentComments, latestPostByUser as buildLatestPostByUser } from '../lib/social'
+import { getFeedPosts, getRecentComments, getRecentAchievementUnlocks, latestPostByUser as buildLatestPostByUser } from '../lib/social'
 import { getProfileStats } from '../lib/collection'
 
 export default function Feed() {
@@ -16,7 +18,10 @@ export default function Feed() {
   // rail — the main timeline itself is fetched/paginated by ActivityFeed below.
   const [latestPosts, setLatestPosts] = useState([])
   const [recentComments, setRecentComments] = useState([])
+  const [achievementUnlocks, setAchievementUnlocks] = useState([])
   const [stats, setStats] = useState(null)
+  const [composerOpen, setComposerOpen] = useState(false)
+  const [feedReloadKey, setFeedReloadKey] = useState(0)
 
   useEffect(() => {
     if (!user) return
@@ -25,11 +30,13 @@ export default function Feed() {
     Promise.all([
       getFeedPosts(userIds, { limit: 20, viewerId: user.id }),
       getRecentComments(userIds, 15),
+      getRecentAchievementUnlocks(userIds, { limit: 8 }),
       getProfileStats(user.id),
-    ]).then(([posts, comments, profileStats]) => {
+    ]).then(([posts, comments, unlocks, profileStats]) => {
       if (!alive) return
       setLatestPosts(posts)
       setRecentComments(comments)
+      setAchievementUnlocks(unlocks)
       setStats(profileStats)
     })
     return () => { alive = false }
@@ -62,18 +69,40 @@ export default function Feed() {
 
           {/* Center — feed */}
           <main className="min-w-0">
-            <h1 className="text-[clamp(2rem,5vw,3rem)] font-black uppercase leading-[0.95] tracking-[-0.03em] mb-1" style={{ textWrap: 'balance' }}>
-              Feed dos <span className="text-social">Amigos</span>
-            </h1>
+            <div className="flex items-start justify-between gap-4 mb-1">
+              <h1 className="text-[clamp(2rem,5vw,3rem)] font-black uppercase leading-[0.95] tracking-[-0.03em]" style={{ textWrap: 'balance' }}>
+                Feed dos <span className="text-social">Amigos</span>
+              </h1>
+              {user && (
+                <button
+                  onClick={() => setComposerOpen(true)}
+                  className="shrink-0 mt-2 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide bg-social text-white hover:bg-social/90"
+                >
+                  Compartilhar foto
+                </button>
+              )}
+            </div>
             <p className="text-gray-500 text-sm font-medium mb-8">
               Atividades que seus amigos escolheram compartilhar.
             </p>
+
+            {composerOpen && (
+              <PhotoPostComposer
+                userId={user.id}
+                onCancel={() => setComposerOpen(false)}
+                onPosted={() => {
+                  setComposerOpen(false)
+                  setFeedReloadKey(k => k + 1)
+                }}
+              />
+            )}
 
             {user && (
               <ActivityFeed
                 userIds={[user.id, ...friends.map(f => f.id)]}
                 viewerId={user.id}
                 currentUserId={user.id}
+                reloadKey={feedReloadKey}
                 emptyMessage='Nenhuma atividade compartilhada ainda. Marque um jogo como jogado/zerado/100% e escolha "Compartilhar no feed".'
               />
             )}
@@ -86,9 +115,10 @@ export default function Feed() {
             )}
           </main>
 
-          {/* Right rail — community pulse (desktop only) */}
+          {/* Right rail — achievements + community pulse (desktop only) */}
           <aside className="hidden lg:block">
-            <div className="sticky top-[88px]">
+            <div className="sticky top-[88px] space-y-8">
+              <AchievementsWidget unlocks={achievementUnlocks} />
               {recentComments.length > 0 && <CommunityPulse comments={recentComments} />}
             </div>
           </aside>

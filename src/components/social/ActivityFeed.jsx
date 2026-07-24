@@ -6,8 +6,8 @@ import AchievementFeedCard from './AchievementFeedCard'
 // Shared infinite-scroll timeline used by both Home (dense) and Feed.jsx (full) — merges
 // feed_posts + achievement unlocks via useActivityFeed, renders the right card per item
 // kind, and loads more as the sentinel div enters the viewport.
-export default function ActivityFeed({ userIds, viewerId, currentUserId, emptyMessage }) {
-  const { items, loading, loadingMore, hasMore, loadMore, error } = useActivityFeed(userIds, viewerId)
+export default function ActivityFeed({ userIds, viewerId, currentUserId, emptyMessage, reloadKey }) {
+  const { items, loading, loadingMore, hasMore, loadMore, error } = useActivityFeed(userIds, viewerId, { reloadKey })
   const sentinelRef = useRef(null)
 
   useEffect(() => {
@@ -43,8 +43,12 @@ export default function ActivityFeed({ userIds, viewerId, currentUserId, emptyMe
         const itemKey = item.kind === 'post'
           ? `post-${item.data.id}`
           : `achievement-${item.data.user_id}-${item.data.achievement_id}`
+        // Achievement unlocks get a dedicated right-rail widget on desktop (Feed.jsx/Home.jsx) —
+        // on mobile, where that rail doesn't exist, they stay inline here.
+        const className = [i < 8 ? 'fade-in-up' : '', item.kind === 'achievement' ? 'lg:hidden' : '']
+          .filter(Boolean).join(' ')
         return (
-          <div key={itemKey} className={i < 8 ? 'fade-in-up' : ''} style={i < 8 ? { animationDelay: `${i * 40}ms` } : undefined}>
+          <div key={itemKey} className={className} style={i < 8 ? { animationDelay: `${i * 40}ms` } : undefined}>
             {item.kind === 'post'
               ? <FeedPostCard post={item.data} currentUserId={currentUserId} />
               : <AchievementFeedCard unlock={item.data} />}

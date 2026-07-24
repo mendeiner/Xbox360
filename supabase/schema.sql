@@ -506,3 +506,25 @@ alter table public.feed_posts add constraint feed_posts_action_check
 alter table public.game_statuses add column if not exists joguei_year integer;
 alter table public.game_statuses add column if not exists zerado_year integer;
 alter table public.game_statuses add column if not exists cem_porcento_year integer;
+
+-- ── Photo posts (manual, user-initiated — a picture + caption shared to the feed) ──
+alter table public.feed_posts add column if not exists caption text;
+alter table public.feed_posts add column if not exists photo_urls jsonb;
+
+alter table public.feed_posts drop constraint if exists feed_posts_action_check;
+alter table public.feed_posts add constraint feed_posts_action_check
+  check (action in ('joguei','zerado','cem_porcento','quero','jogando','added_games','photo'));
+
+alter table public.feed_posts drop constraint if exists feed_posts_caption_check;
+alter table public.feed_posts add constraint feed_posts_caption_check
+  check (caption is null or char_length(caption) <= 500);
+
+insert into storage.buckets (id, name, public)
+values ('feed-photos', 'feed-photos', true)
+on conflict (id) do nothing;
+
+create policy "feed_photos_public_read" on storage.objects for select
+  using (bucket_id = 'feed-photos');
+
+create policy "feed_photos_own_write" on storage.objects for insert
+  to authenticated with check (bucket_id = 'feed-photos' and owner = auth.uid());

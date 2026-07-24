@@ -7,7 +7,7 @@ import { ensureAllConsoleData } from '../consoles/registry'
 // pagination correctness doesn't depend on assuming the two sources interleave evenly —
 // see plan's "open risks" note on this. Each page over-fetches both sources by `pageSize`
 // and re-slices client-side to the merged page size.
-export function useActivityFeed(userIds, viewerId, { pageSize = 15 } = {}) {
+export function useActivityFeed(userIds, viewerId, { pageSize = 15, reloadKey } = {}) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -54,7 +54,7 @@ export function useActivityFeed(userIds, viewerId, { pageSize = 15 } = {}) {
       .catch(err => { if (alive) setError(err) })
       .finally(() => { if (alive) setLoading(false) })
     return () => { alive = false }
-  }, [key, fetchPage])
+  }, [key, fetchPage, reloadKey])
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return

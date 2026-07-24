@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Scope
+
+This repo (`mendeiner/Xbox360`) is the only project worked on in this folder/session. Don't propose or start work on other repos/projects from here.
+
 ## What this is
 
 A personal multi-console game-tracking web app (React + Vite + Tailwind + Supabase), in Portuguese (pt-BR UI). Users mark games as `joguei` (played) / `zerado` (beaten) / `cem_porcento` (100%) / `quero` (want to play), rate them, and find archive.org download links for retail/XBLA/Kinect titles. Xbox 360, PS2, PS3, SNES, NSW (Switch), GBA, Wii, PS4, N64, GameCube and 3DS are implemented; remaining consoles (Xbox One/Series, PC, GBC) are listed on the home screen as "Em breve" (coming soon) placeholders. The "Meu Catálogo" grid and "Meus Jogos" section on `Home.jsx` (not a separate `/dashboard` route/page — there isn't one) show a logged-in user's marked games from every `ready` console grouped by console.
@@ -40,7 +44,13 @@ Supabase project credentials go in `.env` (see `.env.example`):
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 ```
-Schema/RLS policies live in `supabase/schema.sql` — run the whole file once in the Supabase SQL editor to provision a new project. No migration tooling; schema changes are made by hand-editing that file and re-applying.
+Schema/RLS policies live in `supabase/schema.sql` — run the whole file once in the Supabase SQL editor to provision a new project. No migration tooling; schema changes are made by hand-editing that file and re-applying. Re-applying against an already-provisioned project can be done by hand in the SQL editor, or via `node --env-file=.env apply_schema.mjs`, a one-off script (not part of the build) that connects directly with `SUPABASE_DB_URL` (a DB-password connection string — see `.env.example` — distinct from the anon key) and runs the file statement-by-statement, treating "already exists" errors on `create policy` (which has no `IF NOT EXISTS` form) as already-applied rather than failing.
+
+### Deployment identifiers
+
+- **Vercel**: team `mendeiner1`, project `xbox360`, production URL `xbox360.vercel.app`. Linked locally via `vercel link`.
+- **Supabase**: project ref `jbdzfibvialhscgidcsz`, i.e. `VITE_SUPABASE_URL=https://jbdzfibvialhscgidcsz.supabase.co`.
+- The Vercel project does **not** have the Supabase credentials set as env vars (`vercel env pull` only returns `VERCEL_OIDC_TOKEN`) — `.env` is local-only and gitignored, so losing the machine means losing it. To recover: Supabase dashboard → this project → Settings → API → copy the **`anon` `public`** (legacy JWT, starts `eyJ...`) or **`publishable`** (starts `sb_publishable_...`) key, either is safe client-side. **Never** use the **`secret`** (`sb_secret_...`) or **`service_role`** key here — those bypass RLS entirely and must not go in a `VITE_`-prefixed var, since Vite bundles those straight into client-shipped JS.
 
 ## Architecture
 

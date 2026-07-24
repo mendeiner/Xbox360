@@ -8,8 +8,9 @@ import CommentThread from './CommentThread'
 
 export default function FeedPostCard({ post, currentUserId, compact = false }) {
   const isBatch = post.action === 'added_games'
-  const console_ = isBatch ? null : getConsole(post.console)
-  const game = isBatch ? null : console_?.games?.find(g => g.id === post.game_id)
+  const isPhoto = post.action === 'photo'
+  const console_ = (isBatch || isPhoto) ? null : getConsole(post.console)
+  const game = (isBatch || isPhoto) ? null : console_?.games?.find(g => g.id === post.game_id)
 
   // counts/mine come pre-batched from getFeedPosts (reactionCounts/myReaction) — no
   // per-card round-trip needed.
@@ -32,7 +33,7 @@ export default function FeedPostCard({ post, currentUserId, compact = false }) {
     setCommentCount(c => c + 1)
   }
 
-  if (!isBatch && !game) return null
+  if (!isBatch && !isPhoto && !game) return null
 
   const username = post.profiles?.display_name || post.profiles?.username
 
@@ -50,6 +51,42 @@ export default function FeedPostCard({ post, currentUserId, compact = false }) {
       </button>
     </div>
   )
+
+  if (isPhoto) {
+    const photos = post.photo_urls || []
+    return (
+      <div className="bg-social-ink border border-[#222b4a]">
+        <div className="p-5 pb-4">
+          <p className="text-base text-white leading-snug">
+            <Link to={`/u/${post.profiles?.username}`} className="font-black hover:text-social">{username}</Link>
+            <span className="text-gray-400"> compartilhou uma foto</span>
+          </p>
+          <p className="text-[11px] text-gray-500 font-semibold mt-1.5 uppercase tracking-wide">
+            {new Date(post.created_at).toLocaleDateString('pt-BR')}
+          </p>
+          {post.caption && <p className="text-sm text-gray-300 mt-3 whitespace-pre-wrap">{post.caption}</p>}
+        </div>
+
+        {photos.length > 0 && (
+          <div className={`grid gap-0.5 ${photos.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {photos.map((url, i) => (
+              <img key={i} src={url} alt="" className="w-full aspect-square object-cover bg-[#0a0a0a]" />
+            ))}
+          </div>
+        )}
+
+        <div className="p-5">
+          {interactions}
+        </div>
+
+        {commentsOpen && (
+          <div className="border-t border-[#222b4a] px-4 py-3">
+            <CommentThread comments={comments} onAdd={handleAddComment} currentUserId={currentUserId} />
+          </div>
+        )}
+      </div>
+    )
+  }
 
   if (isBatch) {
     const items = post.items || []

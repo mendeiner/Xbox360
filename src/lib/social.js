@@ -45,6 +45,34 @@ export async function createFeedPost(console_name, gameId, action, rating = null
   return data
 }
 
+// Manual, user-initiated post — a picture (or a few) plus an optional caption, unlike every
+// other action here which is auto-posted from a game status change.
+export async function createPhotoPost(photoUrls, caption) {
+  if (isMockMode()) {
+    const post = {
+      id: `mock-post-mine-${Date.now()}`,
+      user_id: 'mock-user',
+      console: null,
+      game_id: null,
+      action: 'photo',
+      rating: null,
+      photo_urls: photoUrls,
+      caption,
+      created_at: new Date().toISOString(),
+      profiles: MOCK_ME,
+    }
+    MOCK_FEED_POSTS.unshift(post)
+    return post
+  }
+  const { data, error } = await supabase
+    .from('feed_posts')
+    .insert({ action: 'photo', photo_urls: photoUrls, caption })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 // One row covering several games added in the same browsing session (see
 // LibraryAddBatchContext) — rendered distinctly by FeedPostCard since it has no single
 // console/game_id of its own.

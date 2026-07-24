@@ -148,6 +148,21 @@ export async function updateAvatar(userId, blob) {
   return cacheBustedUrl
 }
 
+export async function uploadFeedPhotos(userId, blobs) {
+  if (isMockMode()) return blobs.map(blob => URL.createObjectURL(blob))
+  const urls = []
+  for (const blob of blobs) {
+    const path = `${userId}/${crypto.randomUUID()}.webp`
+    const { error } = await supabase.storage
+      .from('feed-photos')
+      .upload(path, blob, { contentType: 'image/webp' })
+    if (error) throw error
+    const { data: { publicUrl } } = supabase.storage.from('feed-photos').getPublicUrl(path)
+    urls.push(publicUrl)
+  }
+  return urls
+}
+
 export async function generateInvite(userId) {
   const code = Math.random().toString(36).substring(2, 10).toUpperCase()
   const { error } = await supabase

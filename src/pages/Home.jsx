@@ -6,13 +6,15 @@ import UsersList from '../components/social/UsersList'
 import ActivityFeed from '../components/social/ActivityFeed'
 import DuelWidget from '../components/social/DuelWidget'
 import PollStrip from '../components/social/PollStrip'
+import AchievementsWidget from '../components/social/AchievementsWidget'
+import PhotoPostComposer from '../components/social/PhotoPostComposer'
 import GameCard from '../components/xbox360/GameCard'
 import GameModal from '../components/xbox360/GameModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useFriends } from '../hooks/useFriends'
 import { getAllMyStatuses, generateInvite } from '../lib/db'
 import { getCollection } from '../lib/collection'
-import { getFeedPosts, getCommunityRanking, latestPostByUser as buildLatestPostByUser } from '../lib/social'
+import { getFeedPosts, getCommunityRanking, getRecentAchievementUnlocks, latestPostByUser as buildLatestPostByUser } from '../lib/social'
 import { getConsole, ensureAllConsoleData } from '../consoles/registry'
 
 const CONSOLES = [
@@ -73,10 +75,13 @@ export default function Home() {
   const [inviteCode, setInviteCode] = useState(null)
   const [copying, setCopying]   = useState(false)
   const [recapOpen, setRecapOpen] = useState(false)
+  const [composerOpen, setComposerOpen] = useState(false)
+  const [feedReloadKey, setFeedReloadKey] = useState(0)
 
   // Small, separate fetch used only to sort the Stories rail by recency — the dominant
   // feed section below fetches/paginates its own posts via ActivityFeed/useActivityFeed.
   const [feedPosts, setFeedPosts]       = useState([])
+  const [achievementUnlocks, setAchievementUnlocks] = useState([])
   const [rankingRows, setRankingRows]   = useState([])
   const [rankingLoading, setRankingLoading] = useState(true)
 
@@ -84,6 +89,7 @@ export default function Home() {
     if (!user) return
     const userIds = [user.id, ...friends.map(f => f.id)]
     getFeedPosts(userIds, { limit: 20, viewerId: user.id }).then(posts => setFeedPosts(posts))
+    getRecentAchievementUnlocks(userIds, { limit: 8 }).then(unlocks => setAchievementUnlocks(unlocks))
   }, [user, friends])
 
   useEffect(() => {
@@ -179,18 +185,26 @@ export default function Home() {
     <div className="min-h-screen bg-surface-1">
       <Nav />
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
+      <main className="max-w-6xl mx-auto px-6 py-10">
 
         {/* Header row — page title left, full-screen retrospective CTA right */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-[11px] font-black uppercase tracking-[1.5px] text-social">Feed dos Amigos</h1>
           {user && (
-            <button
-              onClick={() => setRecapOpen(true)}
-              className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[1.5px] text-gray-300 hover:text-social transition-colors"
-            >
-              ✦ Ver Retrospectiva {new Date().getFullYear()}
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setComposerOpen(true)}
+                className="px-3 py-1.5 text-[11px] font-black uppercase tracking-[1.5px] bg-social text-white hover:bg-social/90"
+              >
+                Compartilhar foto
+              </button>
+              <button
+                onClick={() => setRecapOpen(true)}
+                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[1.5px] text-gray-300 hover:text-social transition-colors"
+              >
+                ✦ Ver Retrospectiva {new Date().getFullYear()}
+              </button>
+            </div>
           )}
         </div>
 
@@ -198,8 +212,19 @@ export default function Home() {
           <YearRecapStory userId={user.id} subject="Você" onClose={() => setRecapOpen(false)} />
         )}
 
-        {/* Friends on the left, dominant infinite feed on the right */}
-        <div className="grid lg:grid-cols-[220px_1fr] gap-6 mb-12">
+        {composerOpen && (
+          <PhotoPostComposer
+            userId={user.id}
+            onCancel={() => setComposerOpen(false)}
+            onPosted={() => {
+              setComposerOpen(false)
+              setFeedReloadKey(k => k + 1)
+            }}
+          />
+        )}
+
+        {/* Friends on the left, dominant infinite feed in the middle, achievements on the right (desktop) */}
+        <div className="grid lg:grid-cols-[220px_1fr_240px] gap-6 mb-12">
           <div className="space-y-6">
             <UsersList friends={friends} latestPostByUser={latestPostByUser} loading={friendsLoading} viewerId={user?.id} />
             {user && <PollStrip userId={user.id} userIds={[user.id, ...friends.map(f => f.id)]} />}
@@ -212,12 +237,19 @@ export default function Home() {
                 userIds={[user.id, ...friends.map(f => f.id)]}
                 viewerId={user.id}
                 currentUserId={user.id}
+                reloadKey={feedReloadKey}
               />
             )}
             <div className="text-right">
               <Link to="/feed" className="text-[11px] font-bold text-gray-500 hover:text-white">Ver feed completo →</Link>
             </div>
           </section>
+
+          <aside className="hidden lg:block">
+            <div className="lg:sticky lg:top-[88px]">
+              <AchievementsWidget unlocks={achievementUnlocks} />
+            </div>
+          </aside>
         </div>
 
         {/* Community ranking — demoted to a small link-out card, feed is the priority now */}
