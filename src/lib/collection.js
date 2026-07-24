@@ -1,21 +1,23 @@
 import { readyConsoles, getConsole, ensureAllConsoleData } from '../consoles/registry'
 import { coverSrc } from '../consoles/dl'
-import { getAllMyStatuses } from './db'
 import { supabase } from './supabase'
 import { isMockMode } from './mockState'
 import { MOCK_STATUS_ROWS_STORE } from './mockSocialData'
 import { getUserAchievements, achievementById, getFriends } from './social'
 
-// For each ready console, fetch the current user's statuses (one round trip for every
-// console, see getAllMyStatuses) and join them against that console's static games data.
-// Only games with at least one status flag set are kept — this is what powers the
-// cross-console dashboard (Phase E of the PS2 plan).
-export async function getCollection() {
-  const [, allStatuses] = await Promise.all([ensureAllConsoleData(), getAllMyStatuses()])
-  const consoles = readyConsoles()
-  return consoles
+// Groups a flat status-rows array (as returned by getAllStatusRows, for any user) into the
+// same { console, games, statuses } shape the game-grid views need — statuses keyed by
+// game_id, only consoles/games with at least one status flag set. Used by Profile.jsx's
+// Coleção tab so it can reuse the rows it already fetched instead of a separate query.
+export function groupStatusRowsByConsole(rows) {
+  const byConsole = {}
+  for (const r of rows) (byConsole[r.console] ||= []).push(r)
+
+  return readyConsoles()
     .map(console_ => {
-      const statuses = allStatuses[console_.id] || {}
+      const consoleRows = byConsole[console_.id] || []
+      const statuses = {}
+      for (const r of consoleRows) statuses[r.game_id] = r
       const games = console_.games.filter(g => {
         const s = statuses[g.id]
         return s && (s.joguei || s.zerado || s.cem_porcento || s.quero || s.jogando)

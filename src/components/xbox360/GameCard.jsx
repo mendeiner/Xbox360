@@ -23,7 +23,7 @@ const YEAR_QUESTION = {
   cem_porcento: 'Quando completou 100%?',
 }
 
-export default function GameCard({ game, status = {}, onStatusChange, onClick, gridMode = false, consoleId = 'xbox360' }) {
+export default function GameCard({ game, status = {}, onStatusChange, onClick, gridMode = false, consoleId = 'xbox360', readOnly = false }) {
   const console_ = getConsole(consoleId)
   const { user }  = useAuth()
   const { addToBatch } = useLibraryAddBatch()
@@ -170,7 +170,7 @@ export default function GameCard({ game, status = {}, onStatusChange, onClick, g
         )}
 
         {/* Hover overlay — pill buttons (click outside the pills bubbles up and opens the modal) */}
-        {hovered && (
+        {hovered && !readOnly && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-2 z-30">
             <div
               className="absolute inset-0 pointer-events-none"

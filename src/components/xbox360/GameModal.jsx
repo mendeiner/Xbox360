@@ -49,7 +49,7 @@ function loadTrailerCache(console_) {
   )
 }
 
-export default function GameModal({ game, status = {}, onStatusChange, onClose, onPrev, onNext, consoleId = 'xbox360' }) {
+export default function GameModal({ game, status = {}, onStatusChange, onClose, onPrev, onNext, consoleId = 'xbox360', readOnly = false }) {
   const console_ = getConsole(consoleId)
   const { user } = useAuth()
   const { addToBatch } = useLibraryAddBatch()
@@ -266,7 +266,7 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-6">
             <div className="min-w-0">
               <SectionLabel>Status</SectionLabel>
-              {pendingKey ? (
+              {readOnly ? null : pendingKey ? (
                 <div className="mt-2 w-full sm:w-[280px]">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[13px] text-gray-200 font-semibold">{YEAR_QUESTION[pendingKey]}</span>
@@ -331,7 +331,7 @@ export default function GameModal({ game, status = {}, onStatusChange, onClose, 
                   </span>
                 )}
               </p>
-              <StarRating value={rating} onChange={handleRating} disabled={!user} />
+              {!readOnly && <StarRating value={rating} onChange={handleRating} disabled={!user} />}
             </div>
           </div>
 

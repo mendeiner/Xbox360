@@ -6,6 +6,7 @@ import AchievementToastContainer from './components/social/AchievementToastConta
 import Login     from './pages/Login'
 
 const Home      = lazy(() => import('./pages/Home'))
+const Consoles  = lazy(() => import('./pages/Consoles'))
 const Xbox360   = lazy(() => import('./pages/Xbox360'))
 const PS2       = lazy(() => import('./pages/PS2'))
 const PS3       = lazy(() => import('./pages/PS3'))
@@ -17,6 +18,7 @@ const PS4       = lazy(() => import('./pages/PS4'))
 const N64       = lazy(() => import('./pages/N64'))
 const GameCube  = lazy(() => import('./pages/GameCube'))
 const N3DS      = lazy(() => import('./pages/N3DS'))
+const PS1       = lazy(() => import('./pages/PS1'))
 const Feed      = lazy(() => import('./pages/Feed'))
 const Profile   = lazy(() => import('./pages/Profile'))
 const Rankings  = lazy(() => import('./pages/Rankings'))
@@ -47,6 +49,7 @@ export default function App() {
         <Routes>
           <Route path="/"     element={user ? <Navigate to="/home" replace /> : <Login />} />
           <Route path="/home"      element={<PrivateRoute><Home /></PrivateRoute>} />
+          <Route path="/consoles"  element={<PrivateRoute><Consoles /></PrivateRoute>} />
           <Route path="/xbox360"   element={<Xbox360 />} />
           <Route path="/ps2"       element={<PS2 />} />
           <Route path="/ps3"       element={<PS3 />} />
@@ -58,6 +61,7 @@ export default function App() {
           <Route path="/n64"       element={<N64 />} />
           <Route path="/gamecube"  element={<GameCube />} />
           <Route path="/3ds"       element={<N3DS />} />
+          <Route path="/ps1"       element={<PS1 />} />
           <Route path="/feed"      element={<PrivateRoute><Feed /></PrivateRoute>} />
           <Route path="/u/:username" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/rankings"  element={<PrivateRoute><Rankings /></PrivateRoute>} />

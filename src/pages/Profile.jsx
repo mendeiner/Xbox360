@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import Nav from '../components/Nav'
 import Top10Editor from '../components/social/Top10Editor'
@@ -6,11 +6,12 @@ import AchievementBadge from '../components/social/AchievementBadge'
 import AvatarCropModal from '../components/social/AvatarCropModal'
 import PollResultCard from '../components/social/PollResultCard'
 import DuelBracket from '../components/social/DuelBracket'
+import GameCard from '../components/xbox360/GameCard'
+import GameModal from '../components/xbox360/GameModal'
 import { coverSrc, coverObjectPosition } from '../consoles/dl'
-import { readyConsoles } from '../consoles/registry'
 import { useAuth } from '../contexts/AuthContext'
-import { getProfileByUsername, updateAvatar } from '../lib/db'
-import { getProfileStats, getAllStatusRows, getTasteProfile, getConsoleCompletion } from '../lib/collection'
+import { getProfileByUsername, updateAvatar, generateInvite } from '../lib/db'
+import { getProfileStats, getAllStatusRows, getTasteProfile, getConsoleCompletion, groupStatusRowsByConsole } from '../lib/collection'
 import { ACHIEVEMENTS, getUserAchievements, getAchievementsProgress, checkAndUnlockAchievements, getFeedPosts, ACTION_LABEL } from '../lib/social'
 import { getClosedPollsByCreator, getPollResults } from '../lib/polls'
 import { getUserDuelBrackets } from '../lib/duels'
@@ -24,36 +25,19 @@ const TABS = [
   { id: 'duels', label: 'Duelos' },
 ]
 
-// Groups this profile's status rows by console into "estante" shelves: the main row of
-// marked games, a completion %, and a softly-framed "Decepções" row (low-rated games the
-// user actually finished, not just owned/wanted) — the negative-signal feature, reusing
-// the existing 1-5 star rating instead of a new dislike flag.
+// Groups this profile's status rows by console into "estante" shelves: the main grid of
+// marked games (clickable, opens GameModal), a completion %, and a softly-framed
+// "Decepções" row (low-rated games the user actually finished, not just owned/wanted) —
+// the negative-signal feature, reusing the existing 1-5 star rating instead of a new
+// dislike flag.
 function buildShelves(rows) {
-  const byConsole = {}
-  for (const r of rows) (byConsole[r.console] ||= []).push(r)
-
-  return readyConsoles()
-    .map(console_ => {
-      const consoleRows = byConsole[console_.id] || []
-      const marked = consoleRows.filter(r => r.joguei || r.zerado || r.cem_porcento || r.quero || r.jogando)
-      if (!marked.length) return null
-
-      const games = marked
-        .map(r => ({ game: console_.games.find(g => g.id === r.game_id), row: r }))
-        .filter(x => x.game)
-
-      const decepcoes = games.filter(({ row }) =>
-        (row.joguei || row.zerado || row.cem_porcento) && row.rating && row.rating <= 2
-      )
-
-      return {
-        console: console_,
-        games,
-        decepcoes,
-        completion: getConsoleCompletion(rows, console_),
-      }
+  return groupStatusRowsByConsole(rows).map(g => {
+    const decepcoes = g.games.filter(game => {
+      const row = g.statuses[game.id]
+      return row && (row.joguei || row.zerado || row.cem_porcento) && row.rating && row.rating <= 2
     })
-    .filter(Boolean)
+    return { ...g, decepcoes, completion: getConsoleCompletion(rows, g.console) }
+  })
 }
 
 export default function Profile() {
@@ -74,6 +58,11 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false)
   const [cropSrc, setCropSrc] = useState(null)
   const [tab, setTab] = useState('collection')
+  const [inviteCode, setInviteCode] = useState(null)
+  const [copying, setCopying] = useState(false)
+  const [selectedConsoleId, setSelectedConsoleId] = useState(null)
+  const [selectedList, setSelectedList] = useState(null)
+  const [selectedIndex, setSelectedIndex] = useState(0)
 
   const isOwner = profile?.id === user?.id
 
@@ -148,6 +137,44 @@ export default function Profile() {
     }
   }
 
+  async function handleGenerateInvite() {
+    const code = await generateInvite(user.id)
+    setInviteCode(code)
+  }
+
+  async function handleCopyInvite() {
+    const url = `${window.location.origin}/?invite=${inviteCode}`
+    await navigator.clipboard.writeText(url)
+    setCopying(true)
+    setTimeout(() => setCopying(false), 2000)
+  }
+
+  const handleStatusChange = useCallback((consoleId, gameId, key, value) => {
+    setShelves(prev => prev.map(g => {
+      if (g.console.id !== consoleId) return g
+      const statuses = { ...g.statuses, [gameId]: { ...(g.statuses[gameId] || {}), [key]: value } }
+      const games = g.console.games.filter(game => {
+        const s = statuses[game.id]
+        return s && (s.joguei || s.zerado || s.cem_porcento || s.quero || s.jogando)
+      })
+      return { ...g, statuses, games }
+    }).filter(g => g.games.length > 0))
+  }, [])
+
+  function openGame(consoleId, list, game) {
+    const idx = list.findIndex(g => g.id === game.id)
+    setSelectedConsoleId(consoleId)
+    setSelectedList(list)
+    setSelectedIndex(idx === -1 ? 0 : idx)
+  }
+  function closeGame() { setSelectedConsoleId(null); setSelectedList(null); setSelectedIndex(0) }
+  const goPrev = () => setSelectedIndex(i => Math.max(0, i - 1))
+  const goNext = () => setSelectedIndex(i => Math.min((selectedList?.length || 1) - 1, i + 1))
+
+  const selectedGroup  = shelves.find(g => g.console.id === selectedConsoleId)
+  const selected       = selectedList ? selectedList[selectedIndex] : null
+  const selectedStatus = selected && selectedGroup ? (selectedGroup.statuses[selected.id] || {}) : {}
+
   if (loading) {
     return (
       <div className="min-h-screen bg-social-bg">
@@ -195,7 +222,7 @@ export default function Profile() {
               </label>
             )}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="text-[clamp(1.5rem,4vw,2.25rem)] font-black uppercase leading-[0.95] tracking-[-0.03em]">{profile.display_name || profile.username}</h1>
             <p className="text-gray-500 text-sm font-medium">@{profile.username}</p>
             <p className="mt-2 flex items-baseline gap-1.5">
@@ -203,6 +230,31 @@ export default function Profile() {
               <span className="text-xs text-gray-500 font-bold uppercase tracking-wide">jogos rastreados</span>
             </p>
           </div>
+
+          {isOwner && (
+            <div className="shrink-0 self-start">
+              {inviteCode ? (
+                <div className="flex items-center gap-2">
+                  <code className="bg-social-ink border border-[#222b4a] px-3 py-2 rounded-lg text-xs font-mono text-social tracking-widest">
+                    {inviteCode}
+                  </code>
+                  <button
+                    onClick={handleCopyInvite}
+                    className="text-xs bg-social/20 hover:bg-social/30 text-social border border-social/30 px-3 py-2 rounded-lg transition-colors font-semibold"
+                  >
+                    {copying ? 'Copiado!' : 'Copiar link'}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleGenerateInvite}
+                  className="text-xs text-gray-400 hover:text-white border border-[#222b4a] hover:border-gray-500 px-4 py-2 rounded-lg transition-colors font-semibold"
+                >
+                  + Convidar amigo
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Stats row — plain bold inline numbers, no boxes */}
@@ -250,16 +302,17 @@ export default function Profile() {
                     <div className="h-full bg-social" style={{ width: `${shelf.completion}%` }} />
                   </div>
 
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {shelf.games.map(({ game }) => (
-                      <img
+                  <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))' }}>
+                    {shelf.games.map(game => (
+                      <GameCard
                         key={game.id}
-                        src={coverSrc(game, shelf.console) || undefined}
-                        alt={game.title}
-                        title={game.title}
-                        className="w-16 h-[88px] object-cover bg-[#0a0a0a] shrink-0"
-                        style={{ objectPosition: coverObjectPosition(shelf.console) }}
-                        onError={e => { e.target.style.display = 'none' }}
+                        game={game}
+                        consoleId={shelf.console.id}
+                        status={shelf.statuses[game.id] || {}}
+                        onStatusChange={(gameId, key, value) => handleStatusChange(shelf.console.id, gameId, key, value)}
+                        onClick={gm => openGame(shelf.console.id, shelf.games, gm)}
+                        gridMode
+                        readOnly={!isOwner}
                       />
                     ))}
                   </div>
@@ -268,12 +321,12 @@ export default function Profile() {
                     <div className="mt-3">
                       <p className="text-[10px] font-bold uppercase tracking-wide text-gray-600 mb-1.5">Decepções</p>
                       <div className="flex gap-2 overflow-x-auto pb-1">
-                        {shelf.decepcoes.map(({ game, row }) => (
+                        {shelf.decepcoes.map(game => (
                           <img
                             key={game.id}
                             src={coverSrc(game, shelf.console) || undefined}
                             alt={game.title}
-                            title={`${game.title} · ★ ${row.rating}`}
+                            title={`${game.title} · ★ ${shelf.statuses[game.id]?.rating}`}
                             className="w-11 h-[60px] object-cover bg-[#0a0a0a] shrink-0 opacity-60"
                             style={{ objectPosition: coverObjectPosition(shelf.console) }}
                             onError={e => { e.target.style.display = 'none' }}
@@ -364,6 +417,19 @@ export default function Profile() {
           </section>
         )}
       </main>
+
+      {selected && (
+        <GameModal
+          game={selected}
+          consoleId={selectedConsoleId}
+          status={selectedStatus}
+          onStatusChange={(gameId, key, value) => handleStatusChange(selectedConsoleId, gameId, key, value)}
+          onClose={closeGame}
+          onPrev={selectedIndex > 0 ? goPrev : null}
+          onNext={selectedList && selectedIndex < selectedList.length - 1 ? goNext : null}
+          readOnly={!isOwner}
+        />
+      )}
     </div>
   )
 }
